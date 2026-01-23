@@ -1,0 +1,489 @@
+/* =====================================================
+   Personal Finance Tracker - Main Stylesheet
+   ===================================================== */
+
+:root {
+    --primary-color: #4F46E5;
+    --primary-light: #818CF8;
+    --sidebar-bg: #FFFFFF;
+    --sidebar-width: 260px;
+    --navbar-height: 60px;
+    --body-bg: #F0F4FF;
+    --card-bg: #FFFFFF;
+    --text-primary: #1F2937;
+    --text-secondary: #6B7280;
+    --border-color: #E5E7EB;
+    --success-color: #10B981;
+    --danger-color: #EF4444;
+    --warning-color: #F59E0B;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--body-bg);
+    color: var(--text-primary);
+}
+
+/* =====================================================
+   Layout - Wrapper & Sidebar
+   ===================================================== */
+
+.wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border-color);
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    transition: transform 0.3s ease;
+}
+
+.sidebar-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.profile-img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.profile-initials {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.profile-initials-large {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 2.5rem;
+    margin: 0 auto;
+}
+
+.sidebar .nav {
+    padding: 1rem 0;
+    flex: 1;
+}
+
+.sidebar .nav-item {
+    margin: 2px 0.75rem;
+}
+
+.sidebar .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.75rem 1rem;
+    color: var(--text-secondary);
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.sidebar .nav-link:hover {
+    background: var(--body-bg);
+    color: var(--primary-color);
+}
+
+.sidebar .nav-link.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    color: white;
+}
+
+.sidebar .nav-link i {
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+}
+
+.sidebar-footer {
+    padding: 1rem 0;
+    border-top: 1px solid var(--border-color);
+    margin-top: auto;
+}
+
+/* =====================================================
+   Main Content Area
+   ===================================================== */
+
+.main-content {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    min-height: 100vh;
+}
+
+.top-navbar {
+    height: var(--navbar-height);
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.search-box .input-group {
+    width: 300px;
+}
+
+.search-box .form-control {
+    border-radius: 8px;
+}
+
+.search-box .form-control:focus {
+    box-shadow: none;
+    border-color: var(--primary-color);
+}
+
+.navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.content-wrapper {
+    padding: 1.5rem;
+}
+
+/* =====================================================
+   Cards
+   ===================================================== */
+
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    background: var(--card-bg);
+}
+
+.card-title {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.summary-card {
+    border-left: 4px solid var(--primary-color);
+}
+
+.summary-card h3 {
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+/* =====================================================
+   Account & Category Icons
+   ===================================================== */
+
+.account-icon,
+.category-icon,
+.wallet-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.account-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.account-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* =====================================================
+   Tables
+   ===================================================== */
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.table td {
+    vertical-align: middle;
+    padding: 1rem 0.75rem;
+}
+
+.table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table tbody tr:last-child {
+    border-bottom: none;
+}
+
+/* =====================================================
+   Badges
+   ===================================================== */
+
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+    border-radius: 6px;
+}
+
+/* =====================================================
+   Forms
+   ===================================================== */
+
+.form-control,
+.form-select {
+    border-radius: 8px;
+    border-color: var(--border-color);
+    padding: 0.625rem 0.875rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+/* =====================================================
+   Buttons
+   ===================================================== */
+
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background: #4338CA;
+    border-color: #4338CA;
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* =====================================================
+   Auth Pages
+   ===================================================== */
+
+.auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--body-bg) 0%, #E0E7FF 100%);
+    padding: 2rem;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 420px;
+}
+
+.auth-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+.auth-logo {
+    font-size: 3rem;
+    color: var(--primary-color);
+}
+
+/* =====================================================
+   Messages / Alerts
+   ===================================================== */
+
+.messages-container {
+    padding: 1rem 1.5rem 0;
+}
+
+.alert {
+    border: none;
+    border-radius: 8px;
+}
+
+/* =====================================================
+   Charts
+   ===================================================== */
+
+.chart-container {
+    position: relative;
+}
+
+/* =====================================================
+   Wallet List
+   ===================================================== */
+
+.wallet-list .wallet-item:last-child {
+    border-bottom: none !important;
+}
+
+/* =====================================================
+   Responsive
+   ===================================================== */
+
+@media (max-width: 991.98px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+    .sidebar.show {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+    }
+
+    .sidebar-overlay.show {
+        display: block;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .content-wrapper {
+        padding: 1rem;
+    }
+
+    .summary-card h3 {
+        font-size: 1.4rem;
+    }
+
+    .auth-card {
+        padding: 1.5rem;
+    }
+}
+
+/* =====================================================
+   Utilities
+   ===================================================== */
+
+.fw-medium {
+    font-weight: 500;
+}
+
+.text-success {
+    color: var(--success-color) !important;
+}
+
+.text-danger {
+    color: var(--danger-color) !important;
+}
+
+/* Dropdown */
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+}
+
+.dropdown-item:hover {
+    background: var(--body-bg);
+}
+
+/* Pagination */
+.pagination .page-link {
+    border: none;
+    color: var(--text-secondary);
+    border-radius: 8px;
+    margin: 0 2px;
+}
+
+.pagination .page-item.active .page-link {
+    background: var(--primary-color);
+    color: white;
+}
+
+.pagination .page-link:hover {
+    background: var(--body-bg);
+    color: var(--primary-color);
+}
+
+.pagination .page-link:focus {
+    box-shadow: none;
+}

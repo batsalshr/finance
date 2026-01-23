@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="d-flex align-items-center mb-4">
+                <a href="{% url 'categories:list' %}" class="btn btn-link text-muted me-2">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h4 class="mb-0">{{ title }}</h4>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="id_name" class="form-label">Category Name</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_category_type" class="form-label">Type</label>
+                                {{ form.category_type }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_color" class="form-label">Color</label>
+                                {{ form.color }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_icon" class="form-label">Icon</label>
+                            {{ form.icon }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="id_is_active">Active</label>
+                            </div>
+                        </div>
+                        
+                        <!-- Icon Preview -->
+                        <div class="mb-4">
+                            <p class="text-muted small mb-2">Preview:</p>
+                            <div class="d-flex align-items-center">
+                                <div id="iconPreview" class="category-icon me-3" style="background-color: #36A2EB20; color: #36A2EB;">
+                                    <i class="bi-three-dots fs-4"></i>
+                                </div>
+                                <span id="namePreview" class="fw-medium">Category Name</span>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'categories:list' %}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-2"></i>{{ button_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Live preview for category
+document.getElementById('id_name').addEventListener('input', function() {
+    document.getElementById('namePreview').textContent = this.value || 'Category Name';
+});
+
+document.getElementById('id_icon').addEventListener('change', function() {
+    const iconClass = this.value;
+    document.querySelector('#iconPreview i').className = iconClass + ' fs-4';
+});
+
+document.getElementById('id_color').addEventListener('change', function() {
+    const color = this.value;
+    const preview = document.getElementById('iconPreview');
+    preview.style.color = color;
+    preview.style.backgroundColor = color + '20';
+});
+</script>
+{% endblock %}

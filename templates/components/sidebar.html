@@ -1,0 +1,61 @@
+{% load static %}
+
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="user-profile">
+            {% if user.profile.profile_picture %}
+            <img src="{{ user.profile.profile_picture.url }}" alt="Profile" class="profile-img">
+            {% else %}
+            <div class="profile-initials">{{ user.profile.initials }}</div>
+            {% endif %}
+            <div class="user-info">
+                <h6 class="mb-0">{{ user.profile.display_name }}</h6>
+                <small class="text-muted">User</small>
+            </div>
+        </div>
+    </div>
+    
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'dashboard:index' %}">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if 'wallets' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'wallets:list' %}">
+                <i class="bi bi-wallet2"></i>
+                <span>Accounts</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if 'transactions' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'transactions:list' %}">
+                <i class="bi bi-receipt"></i>
+                <span>Transactions</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if 'categories' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'categories:list' %}">
+                <i class="bi bi-tags"></i>
+                <span>Categories</span>
+            </a>
+        </li>
+    </ul>
+    
+    <div class="sidebar-footer">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'accounts:profile' %}">
+                    <i class="bi bi-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'accounts:logout' %}">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>Log Out</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>

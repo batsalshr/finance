@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Categories - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">Categories</h4>
+        <div>
+            <a href="{% url 'categories:subcategory_create' %}" class="btn btn-outline-primary me-2">
+                <i class="bi bi-plus-lg me-2"></i>Add Subcategory
+            </a>
+            <a href="{% url 'categories:create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-2"></i>Add Category
+            </a>
+        </div>
+    </div>
+    
+    <div class="row g-3">
+        {% for category in categories %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="category-icon me-3" style="color: {{ category.color }}; background-color: {{ category.color }}20;">
+                                <i class="{{ category.icon }} fs-4"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">{{ category.name }}</h6>
+                                <small class="text-muted">{{ category.get_category_type_display }}</small>
+                            </div>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-link btn-sm text-muted" data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'categories:edit' category.pk %}"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'categories:delete' category.pk %}"><i class="bi bi-trash me-2"></i>Delete</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    {% if category.subcategories.exists %}
+                    <div class="subcategories mt-3">
+                        <p class="text-muted small mb-2">Subcategories:</p>
+                        <div class="d-flex flex-wrap gap-1">
+                            {% for sub in category.subcategories.all %}
+                            <span class="badge bg-light text-dark">
+                                {{ sub.name }}
+                                <a href="{% url 'categories:subcategory_delete' sub.pk %}" class="text-muted ms-1" title="Delete">
+                                    <i class="bi bi-x"></i>
+                                </a>
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if not category.is_active %}
+                    <span class="badge bg-secondary mt-2">Inactive</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-tags display-4 text-muted mb-3"></i>
+                    <h5>No categories yet</h5>
+                    <p class="text-muted">Create categories to organize your transactions.</p>
+                    <a href="{% url 'categories:create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-2"></i>Add Category
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

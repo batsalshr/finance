@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Transaction Details - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="d-flex align-items-center mb-4">
+                <a href="{% url 'transactions:list' %}" class="btn btn-link text-muted me-2">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h4 class="mb-0">Transaction Details</h4>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <div class="text-center py-3 mb-4 border-bottom">
+                        <p class="text-muted mb-1">{{ transaction.date|date:"F d, Y" }}</p>
+                        <h2 class="{% if transaction.is_credit %}text-success{% else %}text-danger{% endif %} mb-0">
+                            {% if transaction.is_credit %}+{% else %}-{% endif %}{{ currency_symbol }}{{ transaction.amount|floatformat:2|intcomma }}
+                        </h2>
+                        <span class="badge {% if transaction.is_credit %}bg-success{% else %}bg-danger{% endif %} mt-2">
+                            {{ transaction.get_transaction_type_display }}
+                        </span>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <p class="text-muted small mb-1">Description</p>
+                            <p class="fw-medium mb-0">{{ transaction.description }}</p>
+                        </div>
+                        <div class="col-6">
+                            <p class="text-muted small mb-1">Account</p>
+                            <p class="fw-medium mb-0">
+                                <i class="{{ transaction.account.icon }} me-1" style="color: {{ transaction.account.color }}"></i>
+                                {{ transaction.account.name }}
+                            </p>
+                        </div>
+                        <div class="col-6">
+                            <p class="text-muted small mb-1">Category</p>
+                            <p class="mb-0">
+                                {% if transaction.category %}
+                                <span class="badge" style="background-color: {{ transaction.category.color }}">
+                                    <i class="{{ transaction.category.icon }} me-1"></i>
+                                    {{ transaction.category.name }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">Not categorized</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-6">
+                            <p class="text-muted small mb-1">Subcategory</p>
+                            <p class="fw-medium mb-0">
+                                {% if transaction.subcategory %}
+                                {{ transaction.subcategory.name }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        {% if transaction.notes %}
+                        <div class="col-12">
+                            <p class="text-muted small mb-1">Notes</p>
+                            <p class="mb-0">{{ transaction.notes }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'transactions:delete' transaction.pk %}" class="btn btn-outline-danger">
+                            <i class="bi bi-trash me-2"></i>Delete
+                        </a>
+                        <a href="{% url 'transactions:edit' transaction.pk %}" class="btn btn-primary">
+                            <i class="bi bi-pencil me-2"></i>Edit Transaction
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="d-flex align-items-center mb-4">
+                <a href="{% url 'wallets:list' %}" class="btn btn-link text-muted me-2">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h4 class="mb-0">{{ title }}</h4>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="id_name" class="form-label">Account Name</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_account_type" class="form-label">Account Type</label>
+                                {{ form.account_type }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_initial_balance" class="form-label">Initial Balance</label>
+                                {{ form.initial_balance }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_icon" class="form-label">Icon</label>
+                                {{ form.icon }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_color" class="form-label">Color</label>
+                                {{ form.color }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_description" class="form-label">Description (Optional)</label>
+                            {{ form.description }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    {{ form.is_active }}
+                                    <label class="form-check-label" for="id_is_active">Active</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    {{ form.include_in_total }}
+                                    <label class="form-check-label" for="id_include_in_total">Include in Total Balance</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'wallets:list' %}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-2"></i>{{ button_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

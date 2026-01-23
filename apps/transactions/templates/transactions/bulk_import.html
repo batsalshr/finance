@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Import Transactions - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center mb-4">
+                <a href="{% url 'transactions:list' %}" class="btn btn-link text-muted me-2">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h4 class="mb-0">Import Transactions from CSV</h4>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="card-title">CSV Format Requirements</h6>
+                    <p class="text-muted">Your CSV file should have the following columns:</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Column</th>
+                                    <th>Required</th>
+                                    <th>Format</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>date</code></td>
+                                    <td>Yes</td>
+                                    <td>YYYY-MM-DD or DD/MM/YYYY</td>
+                                    <td>2024-01-15</td>
+                                </tr>
+                                <tr>
+                                    <td><code>description</code></td>
+                                    <td>Yes</td>
+                                    <td>Text</td>
+                                    <td>Grocery Shopping</td>
+                                </tr>
+                                <tr>
+                                    <td><code>amount</code></td>
+                                    <td>Yes</td>
+                                    <td>Number</td>
+                                    <td>3000</td>
+                                </tr>
+                                <tr>
+                                    <td><code>type</code></td>
+                                    <td>Yes</td>
+                                    <td>credit or debit</td>
+                                    <td>debit</td>
+                                </tr>
+                                <tr>
+                                    <td><code>account</code></td>
+                                    <td>Yes</td>
+                                    <td>Account name</td>
+                                    <td>Cash</td>
+                                </tr>
+                                <tr>
+                                    <td><code>category</code></td>
+                                    <td>No</td>
+                                    <td>Category name</td>
+                                    <td>Food</td>
+                                </tr>
+                                <tr>
+                                    <td><code>notes</code></td>
+                                    <td>No</td>
+                                    <td>Text</td>
+                                    <td>Weekly groceries</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Note:</strong> If an account or category doesn't exist, it will be created automatically.
+                    </div>
+                    
+                    <h6 class="mt-4">Sample CSV</h6>
+                    <pre class="bg-light p-3 rounded"><code>{{ sample_csv }}</code></pre>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Upload CSV File</h6>
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            {{ form.csv_file }}
+                            {% if form.csv_file.errors %}
+                            <div class="invalid-feedback d-block">{{ form.csv_file.errors.0 }}</div>
+                            {% endif %}
+                            <small class="text-muted">Maximum file size: 5MB</small>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'transactions:list' %}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-upload me-2"></i>Import Transactions
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

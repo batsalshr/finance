@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="d-flex align-items-center mb-4">
+                <a href="{% url 'transactions:list' %}" class="btn btn-link text-muted me-2">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h4 class="mb-0">{{ title }}</h4>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_date" class="form-label">Date</label>
+                                {{ form.date }}
+                                {% if form.date.errors %}
+                                <div class="invalid-feedback d-block">{{ form.date.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_transaction_type" class="form-label">Type</label>
+                                {{ form.transaction_type }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_description" class="form-label">Description</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">{{ form.description.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_amount" class="form-label">Amount</label>
+                                {{ form.amount }}
+                                {% if form.amount.errors %}
+                                <div class="invalid-feedback d-block">{{ form.amount.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_account" class="form-label">Account</label>
+                                {{ form.account }}
+                                {% if form.account.errors %}
+                                <div class="invalid-feedback d-block">{{ form.account.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_category" class="form-label">Category</label>
+                                {{ form.category }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_subcategory" class="form-label">Subcategory</label>
+                                {{ form.subcategory }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_notes" class="form-label">Notes (Optional)</label>
+                            {{ form.notes }}
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'transactions:list' %}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-2"></i>{{ button_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Dynamic subcategory loading
+document.getElementById('id_category').addEventListener('change', function() {
+    const categoryId = this.value;
+    const subcategorySelect = document.getElementById('id_subcategory');
+    
+    if (categoryId) {
+        fetch(`/categories/api/subcategories/${categoryId}/`)
+            .then(response => response.json())
+            .then(data => {
+                subcategorySelect.innerHTML = '<option value="">---------</option>';
+                data.subcategories.forEach(sub => {
+                    subcategorySelect.innerHTML += `<option value="${sub.id}">${sub.name}</option>`;
+                });
+            });
+    } else {
+        subcategorySelect.innerHTML = '<option value="">---------</option>';
+    }
+});
+</script>
+{% endblock %}

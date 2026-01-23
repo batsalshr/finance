@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile Settings - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h4 class="mb-4">Profile Settings</h4>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-3 text-center">
+                                <div class="profile-picture-preview mb-3">
+                                    {% if user.profile.profile_picture %}
+                                    <img src="{{ user.profile.profile_picture.url }}" alt="Profile" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="profile-initials-large">{{ user.profile.initials }}</div>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    {{ form.profile_picture }}
+                                </div>
+                            </div>
+                            <div class="col-md-9">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_first_name" class="form-label">First Name</label>
+                                        <input type="text" name="first_name" class="form-control" value="{{ form.first_name.value|default:'' }}" required>
+                                        {% if form.first_name.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.first_name.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_last_name" class="form-label">Last Name</label>
+                                        <input type="text" name="last_name" class="form-control" value="{{ form.last_name.value|default:'' }}" required>
+                                        {% if form.last_name.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.last_name.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="id_email" class="form-label">Email</label>
+                                    <input type="email" name="email" class="form-control" value="{{ form.email.value|default:'' }}" required>
+                                    {% if form.email.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.email.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <h6 class="mb-3">Preferences</h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_currency" class="form-label">Currency</label>
+                                {{ form.currency }}
+                                <small class="text-muted">This will be used across all your transactions</small>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Account Info</h6>
+                    <ul class="list-unstyled mb-0">
+                        <li class="py-2 border-bottom">
+                            <small class="text-muted d-block">Username</small>
+                            <span>{{ user.username }}</span>
+                        </li>
+                        <li class="py-2 border-bottom">
+                            <small class="text-muted d-block">Member Since</small>
+                            <span>{{ user.date_joined|date:"M d, Y" }}</span>
+                        </li>
+                        <li class="py-2">
+                            <small class="text-muted d-block">Last Login</small>
+                            <span>{{ user.last_login|date:"M d, Y H:i" }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
