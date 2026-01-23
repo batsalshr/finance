@@ -45,9 +45,15 @@ class UserLoginView(LoginView):
 class UserLogoutView(LogoutView):
     """User logout view"""
     next_page = reverse_lazy('accounts:login')
+    http_method_names = ['get', 'post', 'options']
     
     def dispatch(self, request, *args, **kwargs):
-        messages.info(request, 'You have been logged out.')
+        if request.method == 'GET':
+            # Log the user out on GET request as well
+            from django.contrib.auth import logout
+            logout(request)
+            messages.info(request, 'You have been logged out.')
+            return redirect(self.next_page)
         return super().dispatch(request, *args, **kwargs)
 
 

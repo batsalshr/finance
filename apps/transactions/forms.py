@@ -38,12 +38,11 @@ class TransactionForm(forms.ModelForm):
     
     def __init__(self, user, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Filter accounts and categories by user
+        # Filter accounts by user (accounts are still user-specific)
         self.fields['account'].queryset = Account.objects.filter(user=user, is_active=True)
-        self.fields['category'].queryset = Category.objects.filter(user=user, is_active=True)
-        self.fields['subcategory'].queryset = SubCategory.objects.filter(
-            category__user=user, is_active=True
-        )
+        # Categories are now global - show all active categories
+        self.fields['category'].queryset = Category.objects.filter(is_active=True)
+        self.fields['subcategory'].queryset = SubCategory.objects.filter(is_active=True)
         
         # Make subcategory optional
         self.fields['subcategory'].required = False
@@ -105,4 +104,5 @@ class TransactionFilterForm(forms.Form):
     def __init__(self, user, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['account'].queryset = Account.objects.filter(user=user, is_active=True)
-        self.fields['category'].queryset = Category.objects.filter(user=user, is_active=True)
+        # Categories are global
+        self.fields['category'].queryset = Category.objects.filter(is_active=True)

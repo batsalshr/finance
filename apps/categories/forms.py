@@ -35,6 +35,6 @@ class SubCategoryForm(forms.ModelForm):
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
     
-    def __init__(self, user, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['category'].queryset = Category.objects.filter(user=user, is_active=True)
+        self.fields['category'].queryset = Category.objects.filter(is_active=True)

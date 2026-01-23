@@ -51,10 +51,13 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'accounts:logout' %}">
-                    <i class="bi bi-box-arrow-left"></i>
-                    <span>Log Out</span>
-                </a>
+                <form method="post" action="{% url 'accounts:logout' %}" id="logoutForm">
+                    {% csrf_token %}
+                    <a class="nav-link" href="#" onclick="document.getElementById('logoutForm').submit(); return false;">
+                        <i class="bi bi-box-arrow-left"></i>
+                        <span>Log Out</span>
+                    </a>
+                </form>
             </li>
         </ul>
     </div>

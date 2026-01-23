@@ -9,9 +9,9 @@ class SubCategoryInline(admin.TabularInline):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'user', 'category_type', 'color', 'icon', 'is_active']
-    list_filter = ['category_type', 'is_active', 'user']
-    search_fields = ['name', 'user__username']
+    list_display = ['name', 'category_type', 'color', 'icon', 'is_active', 'created_by']
+    list_filter = ['category_type', 'is_active']
+    search_fields = ['name']
     inlines = [SubCategoryInline]
 
 

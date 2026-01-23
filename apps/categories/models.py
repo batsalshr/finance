@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 
 class Category(models.Model):
-    """Transaction category (e.g., Food, Transport, Rent)"""
+    """Transaction category (e.g., Food, Transport, Rent) - Shared across all users"""
     
     COLOR_CHOICES = [
         ('#FF6384', 'Red'),
@@ -43,12 +43,12 @@ class Category(models.Model):
         ('both', 'Both'),
     ]
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='categories')
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     color = models.CharField(max_length=7, choices=COLOR_CHOICES, default='#36A2EB')
     icon = models.CharField(max_length=50, choices=ICON_CHOICES, default='bi-three-dots')
     category_type = models.CharField(max_length=10, choices=CATEGORY_TYPES, default='expense')
     is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_categories')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -56,7 +56,6 @@ class Category(models.Model):
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
         ordering = ['name']
-        unique_together = ['user', 'name']
     
     def __str__(self):
         return self.name
@@ -72,7 +71,7 @@ class Category(models.Model):
 
 
 class SubCategory(models.Model):
-    """Sub-category for more detailed categorization"""
+    """Sub-category for more detailed categorization - Shared across all users"""
     
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='subcategories')
     name = models.CharField(max_length=100)

@@ -25,12 +25,17 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         accounts = Account.objects.filter(user=user, is_active=True)
         
         # Calculate totals
-        total_balance = sum(acc.current_balance for acc in accounts if acc.include_in_total)
+        # Total Balance = Sum of ALL account balances (all money you have)
+        total_balance = sum(acc.current_balance for acc in accounts)
+        
+        # Savings Balance = Sum of savings-type accounts only (money set aside)
         savings_balance = sum(
             acc.current_balance for acc in accounts 
-            if acc.account_type == 'savings' and acc.include_in_total
+            if acc.account_type == 'savings'
         )
-        current_total = total_balance - savings_balance
+        
+        # Current Balance = Total Balance - Savings (spendable money)
+        current_balance = total_balance - savings_balance
         
         # Recent transactions
         recent_transactions = Transaction.objects.filter(user=user).select_related(
@@ -58,7 +63,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context.update({
             'total_balance': total_balance,
             'savings_balance': savings_balance,
-            'current_total': current_total,
+            'current_balance': current_balance,
             'recent_transactions': recent_transactions,
             'accounts': accounts,
             'wallet_balances': wallet_balances,

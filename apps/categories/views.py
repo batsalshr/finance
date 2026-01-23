@@ -10,24 +10,24 @@ from .forms import CategoryForm, SubCategoryForm
 
 
 class CategoryListView(LoginRequiredMixin, ListView):
-    """List all categories"""
+    """List all categories (shared across all users)"""
     model = Category
     template_name = 'categories/list.html'
     context_object_name = 'categories'
     
     def get_queryset(self):
-        return Category.objects.filter(user=self.request.user).prefetch_related('subcategories')
+        return Category.objects.filter(is_active=True).prefetch_related('subcategories')
 
 
 class CategoryCreateView(LoginRequiredMixin, CreateView):
-    """Create new category"""
+    """Create new category (available to all users)"""
     model = Category
     form_class = CategoryForm
     template_name = 'categories/form.html'
     success_url = reverse_lazy('categories:list')
     
     def form_valid(self, form):
-        form.instance.user = self.request.user
+        form.instance.created_by = self.request.user
         messages.success(self.request, f'Category "{form.instance.name}" created successfully!')
         return super().form_valid(form)
     
@@ -46,7 +46,7 @@ class CategoryUpdateView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('categories:list')
     
     def get_queryset(self):
-        return Category.objects.filter(user=self.request.user)
+        return Category.objects.filter(is_active=True)
     
     def form_valid(self, form):
         messages.success(self.request, f'Category "{form.instance.name}" updated successfully!')
@@ -65,9 +65,6 @@ class CategoryDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'categories/confirm_delete.html'
     success_url = reverse_lazy('categories:list')
     
-    def get_queryset(self):
-        return Category.objects.filter(user=self.request.user)
-    
     def form_valid(self, form):
         messages.success(self.request, f'Category "{self.object.name}" deleted successfully!')
         return super().form_valid(form)
@@ -82,7 +79,6 @@ class SubCategoryCreateView(LoginRequiredMixin, CreateView):
     
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
         return kwargs
     
     def form_valid(self, form):
@@ -102,9 +98,6 @@ class SubCategoryDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'categories/confirm_delete.html'
     success_url = reverse_lazy('categories:list')
     
-    def get_queryset(self):
-        return SubCategory.objects.filter(category__user=self.request.user)
-    
     def form_valid(self, form):
         messages.success(self.request, f'Subcategory deleted successfully!')
         return super().form_valid(form)
@@ -117,7 +110,6 @@ def get_subcategories(request, category_id):
     
     subcategories = SubCategory.objects.filter(
         category_id=category_id,
-        category__user=request.user,
         is_active=True
     ).values('id', 'name')
     
