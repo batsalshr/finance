@@ -38,6 +38,12 @@ class Account(models.Model):
     name = models.CharField(max_length=100)
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES, default='bank')
     initial_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    savings_amount = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        default=0,
+        help_text="Amount you want to set aside as savings from this account"
+    )
     icon = models.CharField(max_length=50, choices=ICON_CHOICES, default='bi-wallet2')
     color = models.CharField(max_length=7, choices=COLOR_CHOICES, default='#28a745')
     description = models.TextField(blank=True, null=True)
@@ -57,7 +63,7 @@ class Account(models.Model):
     
     @property
     def current_balance(self):
-        """Calculate current balance from transactions"""
+        """Calculate current balance from transactions (total money in account)"""
         from apps.transactions.models import Transaction
         
         credits = Transaction.objects.filter(
@@ -71,6 +77,11 @@ class Account(models.Model):
         ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
         
         return self.initial_balance + credits - debits
+    
+    @property
+    def actual_balance(self):
+        """Spendable balance = Current Balance - Savings Amount"""
+        return self.current_balance - self.savings_amount
     
     @property
     def total_credits(self):

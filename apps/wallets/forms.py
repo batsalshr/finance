@@ -7,7 +7,7 @@ class AccountForm(forms.ModelForm):
     
     class Meta:
         model = Account
-        fields = ['name', 'account_type', 'initial_balance', 'icon', 'color', 'description', 'is_active', 'include_in_total']
+        fields = ['name', 'account_type', 'initial_balance', 'savings_amount', 'icon', 'color', 'description', 'is_active', 'include_in_total']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -15,6 +15,11 @@ class AccountForm(forms.ModelForm):
             }),
             'account_type': forms.Select(attrs={'class': 'form-select'}),
             'initial_balance': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0.00',
+                'step': '0.01'
+            }),
+            'savings_amount': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'placeholder': '0.00',
                 'step': '0.01'

@@ -27,25 +27,33 @@
     
     <!-- Account Stats -->
     <div class="row g-3 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card">
                 <div class="card-body">
                     <p class="text-muted mb-1">Current Balance</p>
-                    <h3 class="mb-0 {% if account.current_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
-                        {{ currency_symbol }}{{ account.current_balance|floatformat:2|intcomma }}
+                    <h3 class="mb-0">{{ currency_symbol }}{{ account.current_balance|floatformat:2|intcomma }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Savings</p>
+                    <h3 class="mb-0 text-success">{{ currency_symbol }}{{ account.savings_amount|floatformat:2|intcomma }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Spendable</p>
+                    <h3 class="mb-0 {% if account.actual_balance >= 0 %}text-primary{% else %}text-danger{% endif %}">
+                        {{ currency_symbol }}{{ account.actual_balance|floatformat:2|intcomma }}
                     </h3>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Total Income</p>
-                    <h3 class="mb-0 text-success">{{ currency_symbol }}{{ account.total_credits|floatformat:2|intcomma }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card">
                 <div class="card-body">
                     <p class="text-muted mb-1">Total Expenses</p>

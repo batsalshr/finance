@@ -25,14 +25,11 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         accounts = Account.objects.filter(user=user, is_active=True)
         
         # Calculate totals
-        # Total Balance = Sum of ALL account balances (all money you have)
+        # Total Balance = Sum of ALL account current balances (all money you have)
         total_balance = sum(acc.current_balance for acc in accounts)
         
-        # Savings Balance = Sum of savings-type accounts only (money set aside)
-        savings_balance = sum(
-            acc.current_balance for acc in accounts 
-            if acc.account_type == 'savings'
-        )
+        # Savings Balance = Sum of savings_amount from ALL accounts (money set aside)
+        savings_balance = sum(acc.savings_amount for acc in accounts)
         
         # Current Balance = Total Balance - Savings (spendable money)
         current_balance = total_balance - savings_balance

@@ -37,6 +37,15 @@
                             </div>
                         </div>
                         
+                        <div class="mb-3">
+                            <label for="id_savings_amount" class="form-label">
+                                Savings Amount
+                                <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="Amount you want to set aside as savings from this account. This won't be counted in your spendable balance."></i>
+                            </label>
+                            {{ form.savings_amount }}
+                            <small class="text-muted">Amount to set aside as savings (won't count as spendable)</small>
+                        </div>
+                        
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="id_icon" class="form-label">Icon</label>
@@ -82,4 +91,14 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+});
+</script>
 {% endblock %}

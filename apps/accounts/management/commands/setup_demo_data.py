@@ -200,13 +200,14 @@ class Command(BaseCommand):
         return categories
 
     def create_accounts(self, user):
-        """Create sample accounts"""
+        """Create sample accounts with savings amounts"""
         
         accounts_data = [
             {
                 'name': 'eSewa',
                 'account_type': 'wallet',
                 'initial_balance': Decimal('50000'),
+                'savings_amount': Decimal('10000'),
                 'icon': 'bi-phone',
                 'color': '#28a745',
                 'description': 'eSewa Digital Wallet'
@@ -215,6 +216,7 @@ class Command(BaseCommand):
                 'name': 'Cash',
                 'account_type': 'cash',
                 'initial_balance': Decimal('15000'),
+                'savings_amount': Decimal('5000'),
                 'icon': 'bi-cash-stack',
                 'color': '#ffc107',
                 'description': 'Cash on hand'
@@ -223,6 +225,7 @@ class Command(BaseCommand):
                 'name': 'Laxmi Bank',
                 'account_type': 'bank',
                 'initial_balance': Decimal('150000'),
+                'savings_amount': Decimal('50000'),
                 'icon': 'bi-bank',
                 'color': '#dc3545',
                 'description': 'Laxmi Sunrise Bank Savings Account'
@@ -231,22 +234,25 @@ class Command(BaseCommand):
                 'name': 'Siddhartha Bank',
                 'account_type': 'bank',
                 'initial_balance': Decimal('80000'),
+                'savings_amount': Decimal('20000'),
                 'icon': 'bi-bank',
                 'color': '#fd7e14',
                 'description': 'Siddhartha Bank Current Account'
             },
             {
-                'name': 'Savings',
+                'name': 'Savings Account',
                 'account_type': 'savings',
                 'initial_balance': Decimal('100000'),
+                'savings_amount': Decimal('100000'),
                 'icon': 'bi-piggy-bank',
                 'color': '#6f42c1',
-                'description': 'Emergency Fund Savings'
+                'description': 'Emergency Fund - Fully saved'
             },
             {
                 'name': 'Khalti',
                 'account_type': 'wallet',
                 'initial_balance': Decimal('25000'),
+                'savings_amount': Decimal('5000'),
                 'icon': 'bi-wallet2',
                 'color': '#5C2D91',
                 'description': 'Khalti Digital Wallet'
@@ -262,6 +268,7 @@ class Command(BaseCommand):
                 defaults={
                     'account_type': acc_data['account_type'],
                     'initial_balance': acc_data['initial_balance'],
+                    'savings_amount': acc_data['savings_amount'],
                     'icon': acc_data['icon'],
                     'color': acc_data['color'],
                     'description': acc_data['description'],
@@ -269,11 +276,11 @@ class Command(BaseCommand):
             )
             
             if created:
-                self.stdout.write(f'  ✓ Created account: {acc_data["name"]}')
+                self.stdout.write(f'  ✓ Created account: {acc_data["name"]} (Savings: {acc_data["savings_amount"]})')
             
             accounts[acc_data['name']] = account
         
-        self.stdout.write(self.style.SUCCESS(f'✓ Created {len(accounts_data)} accounts'))
+        self.stdout.write(self.style.SUCCESS(f'✓ Created {len(accounts_data)} accounts with savings'))
         return accounts
 
     def create_transactions(self, user, accounts, categories):
