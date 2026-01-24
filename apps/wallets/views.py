@@ -21,14 +21,22 @@ class AccountListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         accounts = self.get_queryset()
         
+        # Separate regular accounts and credit cards
+        regular_accounts = [acc for acc in accounts if not acc.is_credit_card and acc.include_in_total]
+        credit_cards = [acc for acc in accounts if acc.is_credit_card and acc.include_in_total]
+        
         # Calculate totals
-        total_balance = sum(acc.current_balance for acc in accounts if acc.include_in_total)
-        total_savings = sum(acc.savings_amount for acc in accounts if acc.include_in_total)
-        spendable_balance = total_balance - total_savings
+        total_balance = sum(acc.current_balance for acc in regular_accounts)
+        total_credit_debt = sum(acc.amount_owed for acc in credit_cards)
+        total_savings = sum(acc.savings_amount for acc in regular_accounts)
+        
+        # Spendable = Total Balance - Savings - Credit Debt
+        spendable_balance = total_balance - total_savings - total_credit_debt
         
         context['total_balance'] = total_balance
         context['total_savings'] = total_savings
         context['spendable_balance'] = spendable_balance
+        context['total_credit_debt'] = total_credit_debt
         context['currency_symbol'] = self.request.user.profile.currency_symbol
         return context
 

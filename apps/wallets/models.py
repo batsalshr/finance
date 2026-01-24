@@ -4,7 +4,7 @@ from decimal import Decimal
 
 
 class Account(models.Model):
-    """Bank accounts, wallets, cash holdings"""
+    """Bank accounts, wallets, cash holdings, credit cards"""
     
     ACCOUNT_TYPES = [
         ('bank', 'Bank Account'),
@@ -44,6 +44,13 @@ class Account(models.Model):
         default=0,
         help_text="Amount you want to set aside as savings from this account"
     )
+    # Credit Card specific fields
+    credit_limit = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        default=0,
+        help_text="Credit limit for credit cards"
+    )
     icon = models.CharField(max_length=50, choices=ICON_CHOICES, default='bi-wallet2')
     color = models.CharField(max_length=7, choices=COLOR_CHOICES, default='#28a745')
     description = models.TextField(blank=True, null=True)
@@ -62,8 +69,17 @@ class Account(models.Model):
         return f"{self.name} ({self.get_account_type_display()})"
     
     @property
+    def is_credit_card(self):
+        """Check if this is a credit card account"""
+        return self.account_type == 'credit'
+    
+    @property
     def current_balance(self):
-        """Calculate current balance from transactions (total money in account)"""
+        """
+        Calculate current balance from transactions.
+        For credit cards: positive = amount owed (debt)
+        For other accounts: positive = money you have
+        """
         from apps.transactions.models import Transaction
         
         credits = Transaction.objects.filter(
@@ -76,16 +92,59 @@ class Account(models.Model):
             transaction_type='debit'
         ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
         
-        return self.initial_balance + credits - debits
+        if self.is_credit_card:
+            # For credit cards: spending (debit) increases debt, payments (credit) decrease debt
+            # initial_balance = starting debt (usually 0)
+            return self.initial_balance + debits - credits
+        else:
+            return self.initial_balance + credits - debits
+    
+    @property
+    def amount_owed(self):
+        """For credit cards: how much you owe"""
+        if self.is_credit_card:
+            return self.current_balance
+        return Decimal('0')
+    
+    @property
+    def available_credit(self):
+        """For credit cards: how much credit is still available"""
+        if self.is_credit_card:
+            return self.credit_limit - self.current_balance
+        return Decimal('0')
+    
+    @property
+    def credit_utilization(self):
+        """For credit cards: percentage of credit limit used"""
+        if self.is_credit_card and self.credit_limit > 0:
+            return (self.current_balance / self.credit_limit) * 100
+        return Decimal('0')
     
     @property
     def actual_balance(self):
-        """Spendable balance = Current Balance - Savings Amount"""
+        """
+        Spendable balance.
+        For regular accounts: Current Balance - Savings
+        For credit cards: Available Credit (what you can still spend)
+        """
+        if self.is_credit_card:
+            return self.available_credit
         return self.current_balance - self.savings_amount
     
     @property
+    def display_balance(self):
+        """
+        Balance to show as the main number.
+        For credit cards: negative of amount owed (shows as debt)
+        For others: current balance
+        """
+        if self.is_credit_card:
+            return -self.amount_owed  # Show as negative (debt)
+        return self.current_balance
+    
+    @property
     def total_credits(self):
-        """Total income to this account"""
+        """Total income/payments to this account"""
         from apps.transactions.models import Transaction
         return Transaction.objects.filter(
             account=self,
@@ -94,7 +153,7 @@ class Account(models.Model):
     
     @property
     def total_debits(self):
-        """Total expenses from this account"""
+        """Total expenses/charges from this account"""
         from apps.transactions.models import Transaction
         return Transaction.objects.filter(
             account=self,

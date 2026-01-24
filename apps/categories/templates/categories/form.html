@@ -3,77 +3,284 @@
 {% block title %}{{ title }} - Finance Tracker{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <div class="d-flex align-items-center mb-4">
-                <a href="{% url 'categories:list' %}" class="btn btn-link text-muted me-2">
-                    <i class="bi bi-arrow-left"></i>
-                </a>
-                <h4 class="mb-0">{{ title }}</h4>
-            </div>
-            
-            <div class="card">
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <div class="mb-3">
-                            <label for="id_name" class="form-label">Category Name</label>
-                            {{ form.name }}
-                            {% if form.name.errors %}
-                            <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="id_category_type" class="form-label">Type</label>
-                                {{ form.category_type }}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="id_color" class="form-label">Color</label>
-                                {{ form.color }}
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="id_icon" class="form-label">Icon</label>
-                            {{ form.icon }}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <div class="form-check">
-                                {{ form.is_active }}
-                                <label class="form-check-label" for="id_is_active">Active</label>
-                            </div>
-                        </div>
-                        
-                        <!-- Icon Preview -->
-                        <div class="mb-4">
-                            <p class="text-muted small mb-2">Preview:</p>
-                            <div class="d-flex align-items-center">
-                                <div id="iconPreview" class="category-icon me-3" style="background-color: #36A2EB20; color: #36A2EB;">
-                                    <i class="bi-three-dots fs-4"></i>
-                                </div>
-                                <span id="namePreview" class="fw-medium">Category Name</span>
-                            </div>
-                        </div>
-                        
-                        <hr class="my-4">
-                        
-                        <div class="d-flex justify-content-end gap-2">
-                            <a href="{% url 'categories:list' %}" class="btn btn-outline-secondary">Cancel</a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-lg me-2"></i>{{ button_text }}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+<div class="form-page-container">
+    <div class="form-page-header">
+        <a href="{% url 'categories:list' %}" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h4 class="form-page-title">{{ title }}</h4>
+            <p class="form-page-subtitle">{% if object %}Update category details{% else %}Create a new category{% endif %}</p>
         </div>
     </div>
+    
+    <div class="form-card">
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Preview Card -->
+            <div class="preview-card">
+                <div id="iconPreview" class="preview-icon" style="background-color: #6366f120; color: #6366f1;">
+                    <i class="bi-tag fs-4"></i>
+                </div>
+                <span id="namePreview" class="preview-name">Category Name</span>
+                <span id="typePreview" class="preview-type">expense</span>
+            </div>
+            
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="id_name">Category Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <span class="form-error">{{ form.name.errors.0 }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_category_type">Type</label>
+                        {{ form.category_type }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_color">Color</label>
+                        {{ form.color }}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_icon">Icon</label>
+                    {{ form.icon }}
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <label class="checkbox-label">
+                    {{ form.is_active }}
+                    <span class="checkbox-text">
+                        <strong>Active Category</strong>
+                        <small>Inactive categories won't appear in selections</small>
+                    </span>
+                </label>
+            </div>
+            
+            <div class="form-actions">
+                <a href="{% url 'categories:list' %}" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-dark">
+                    <i class="bi bi-check-lg me-2"></i>{{ button_text }}
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-page-container {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.form-page-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.back-btn:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.form-page-title {
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.form-page-subtitle {
+    color: #6b7280;
+    margin: 4px 0 0 0;
+    font-size: 14px;
+}
+
+/* Form Card */
+.form-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid #f3f4f6;
+}
+
+/* Preview Card */
+.preview-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 12px;
+    margin-bottom: 24px;
+}
+
+.preview-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+
+.preview-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 16px;
+    color: #111827;
+}
+
+.preview-type {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+/* Form Sections */
+.form-section {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.form-section:last-of-type {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #111827;
+    box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-error {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Checkbox Label */
+.checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s;
+}
+
+.checkbox-label:hover {
+    background: #f9fafb;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    accent-color: #111827;
+}
+
+.checkbox-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.checkbox-text strong {
+    font-size: 14px;
+    color: #111827;
+}
+
+.checkbox-text small {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #f3f4f6;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -93,6 +300,22 @@ document.getElementById('id_color').addEventListener('change', function() {
     const preview = document.getElementById('iconPreview');
     preview.style.color = color;
     preview.style.backgroundColor = color + '20';
+});
+
+document.getElementById('id_category_type').addEventListener('change', function() {
+    const typePreview = document.getElementById('typePreview');
+    typePreview.textContent = this.value;
+    
+    if (this.value === 'expense') {
+        typePreview.style.background = '#fef2f2';
+        typePreview.style.color = '#dc2626';
+    } else if (this.value === 'income') {
+        typePreview.style.background = '#ecfdf5';
+        typePreview.style.color = '#059669';
+    } else {
+        typePreview.style.background = '#f3f4f6';
+        typePreview.style.color = '#6b7280';
+    }
 });
 </script>
 {% endblock %}

@@ -3,98 +3,364 @@
 {% block title %}{{ title }} - Finance Tracker{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <div class="d-flex align-items-center mb-4">
-                <a href="{% url 'wallets:list' %}" class="btn btn-link text-muted me-2">
-                    <i class="bi bi-arrow-left"></i>
-                </a>
-                <h4 class="mb-0">{{ title }}</h4>
-            </div>
+<div class="form-page-container">
+    <div class="form-page-header">
+        <a href="{% url 'wallets:list' %}" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h4 class="form-page-title">{{ title }}</h4>
+            <p class="form-page-subtitle">{% if object %}Update account details{% else %}Add a new account to track{% endif %}</p>
+        </div>
+    </div>
+    
+    <div class="form-card">
+        <form method="post">
+            {% csrf_token %}
             
-            <div class="card">
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <div class="mb-3">
-                            <label for="id_name" class="form-label">Account Name</label>
-                            {{ form.name }}
-                            {% if form.name.errors %}
-                            <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="id_account_type" class="form-label">Account Type</label>
-                                {{ form.account_type }}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="id_initial_balance" class="form-label">Initial Balance</label>
-                                {{ form.initial_balance }}
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="id_savings_amount" class="form-label">
-                                Savings Amount
-                                <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="Amount you want to set aside as savings from this account. This won't be counted in your spendable balance."></i>
-                            </label>
-                            {{ form.savings_amount }}
-                            <small class="text-muted">Amount to set aside as savings (won't count as spendable)</small>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="id_icon" class="form-label">Icon</label>
-                                {{ form.icon }}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="id_color" class="form-label">Color</label>
-                                {{ form.color }}
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="id_description" class="form-label">Description (Optional)</label>
-                            {{ form.description }}
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <div class="form-check">
-                                    {{ form.is_active }}
-                                    <label class="form-check-label" for="id_is_active">Active</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <div class="form-check">
-                                    {{ form.include_in_total }}
-                                    <label class="form-check-label" for="id_include_in_total">Include in Total Balance</label>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <hr class="my-4">
-                        
-                        <div class="d-flex justify-content-end gap-2">
-                            <a href="{% url 'wallets:list' %}" class="btn btn-outline-secondary">Cancel</a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-lg me-2"></i>{{ button_text }}
-                            </button>
-                        </div>
-                    </form>
+            <div class="form-section">
+                <h6 class="form-section-title">Basic Information</h6>
+                
+                <div class="form-group">
+                    <label for="id_name">Account Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <span class="form-error">{{ form.name.errors.0 }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_account_type">Account Type</label>
+                        {{ form.account_type }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_initial_balance">
+                            <span id="balanceLabel">Initial Balance</span>
+                        </label>
+                        {{ form.initial_balance }}
+                        <span class="form-hint" id="balanceHint">Starting balance of this account</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_description">Description <span class="optional">(Optional)</span></label>
+                    {{ form.description }}
                 </div>
             </div>
-        </div>
+            
+            <!-- Credit Card Section - Only visible for credit cards -->
+            <div class="form-section" id="creditCardSection" style="display: none;">
+                <h6 class="form-section-title">
+                    <i class="bi bi-credit-card me-2"></i>Credit Card Details
+                </h6>
+                <p class="form-section-desc">Set your credit limit to track available credit and utilization.</p>
+                
+                <div class="form-group">
+                    <label for="id_credit_limit">Credit Limit</label>
+                    {{ form.credit_limit }}
+                    <span class="form-hint">Maximum amount you can borrow on this card</span>
+                </div>
+            </div>
+            
+            <!-- Savings Section - Only for non-credit cards -->
+            <div class="form-section" id="savingsSection">
+                <h6 class="form-section-title">Savings Goal</h6>
+                <p class="form-section-desc">Set aside money as savings - it won't count toward your spendable balance.</p>
+                
+                <div class="form-group">
+                    <label for="id_savings_amount">Savings Amount</label>
+                    {{ form.savings_amount }}
+                    <span class="form-hint">This amount will be excluded from your spendable balance</span>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h6 class="form-section-title">Appearance</h6>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_icon">Icon</label>
+                        {{ form.icon }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_color">Color</label>
+                        {{ form.color }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h6 class="form-section-title">Settings</h6>
+                
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        {{ form.is_active }}
+                        <span class="checkbox-text">
+                            <strong>Active Account</strong>
+                            <small>Inactive accounts won't appear in selections</small>
+                        </span>
+                    </label>
+                    
+                    <label class="checkbox-label">
+                        {{ form.include_in_total }}
+                        <span class="checkbox-text">
+                            <strong>Include in Total Balance</strong>
+                            <small id="includeHint">Count this account toward your total balance</small>
+                        </span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <a href="{% url 'wallets:list' %}" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-dark">
+                    <i class="bi bi-check-lg me-2"></i>{{ button_text }}
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+.form-page-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.form-page-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.back-btn:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.form-page-title {
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.form-page-subtitle {
+    color: #6b7280;
+    margin: 4px 0 0 0;
+    font-size: 14px;
+}
+
+/* Form Card */
+.form-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid #f3f4f6;
+}
+
+/* Form Sections */
+.form-section {
+    margin-bottom: 28px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.form-section:last-of-type {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.form-section-title {
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px 0;
+    font-size: 14px;
+}
+
+.form-section-desc {
+    color: #6b7280;
+    font-size: 13px;
+    margin: 0 0 16px 0;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.form-group label .optional {
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #111827;
+    box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-error {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}
+
+.form-hint {
+    color: #9ca3af;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Checkbox Group */
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s;
+}
+
+.checkbox-label:hover {
+    background: #f9fafb;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    accent-color: #111827;
+}
+
+.checkbox-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.checkbox-text strong {
+    font-size: 14px;
+    color: #111827;
+}
+
+.checkbox-text small {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #f3f4f6;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
 {% block extra_js %}
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const accountType = document.getElementById('id_account_type');
+    const creditCardSection = document.getElementById('creditCardSection');
+    const savingsSection = document.getElementById('savingsSection');
+    const balanceLabel = document.getElementById('balanceLabel');
+    const balanceHint = document.getElementById('balanceHint');
+    const includeHint = document.getElementById('includeHint');
+    
+    function updateFormForAccountType() {
+        const isCreditCard = accountType.value === 'credit';
+        
+        if (isCreditCard) {
+            creditCardSection.style.display = 'block';
+            savingsSection.style.display = 'none';
+            balanceLabel.textContent = 'Current Balance Owed';
+            balanceHint.textContent = 'Enter current outstanding balance (0 if new card)';
+            includeHint.textContent = 'Credit card debt will be subtracted from your net worth';
+        } else {
+            creditCardSection.style.display = 'none';
+            savingsSection.style.display = 'block';
+            balanceLabel.textContent = 'Initial Balance';
+            balanceHint.textContent = 'Starting balance of this account';
+            includeHint.textContent = 'Count this account toward your total balance';
+        }
+    }
+    
+    // Initial check
+    updateFormForAccountType();
+    
+    // Listen for changes
+    accountType.addEventListener('change', updateFormForAccountType);
+});
+
 // Initialize tooltips
 var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
 var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {

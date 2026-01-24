@@ -24,15 +24,28 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         # Get all user accounts
         accounts = Account.objects.filter(user=user, is_active=True)
         
+        # Separate regular accounts and credit cards
+        regular_accounts = [acc for acc in accounts if not acc.is_credit_card]
+        credit_cards = [acc for acc in accounts if acc.is_credit_card]
+        
         # Calculate totals
-        # Total Balance = Sum of ALL account current balances (all money you have)
-        total_balance = sum(acc.current_balance for acc in accounts)
+        # Total Balance = Sum of regular account balances (money you have)
+        total_balance = sum(acc.current_balance for acc in regular_accounts if acc.include_in_total)
         
-        # Savings Balance = Sum of savings_amount from ALL accounts (money set aside)
-        savings_balance = sum(acc.savings_amount for acc in accounts)
+        # Credit Card Debt = Sum of amount owed on credit cards
+        total_credit_debt = sum(acc.amount_owed for acc in credit_cards if acc.include_in_total)
         
-        # Current Balance = Total Balance - Savings (spendable money)
-        current_balance = total_balance - savings_balance
+        # Net Worth = Total Balance - Credit Card Debt
+        net_worth = total_balance - total_credit_debt
+        
+        # Savings Balance = Sum of savings_amount from regular accounts
+        savings_balance = sum(acc.savings_amount for acc in regular_accounts)
+        
+        # Spendable = Net Worth - Savings
+        current_balance = net_worth - savings_balance
+        
+        # Available Credit = Sum of available credit on all credit cards
+        available_credit = sum(acc.available_credit for acc in credit_cards)
         
         # Recent transactions
         recent_transactions = Transaction.objects.filter(user=user).select_related(
@@ -61,6 +74,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             'total_balance': total_balance,
             'savings_balance': savings_balance,
             'current_balance': current_balance,
+            'total_credit_debt': total_credit_debt,
+            'available_credit': available_credit,
+            'net_worth': net_worth,
             'recent_transactions': recent_transactions,
             'accounts': accounts,
             'wallet_balances': wallet_balances,

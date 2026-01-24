@@ -2,194 +2,430 @@
 
 {% block title %}{{ title }} - Finance Tracker{% endblock %}
 
+{% block content %}
+<div class="form-page-container">
+    <div class="form-page-header">
+        <a href="{% url 'transactions:list' %}" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h4 class="form-page-title">{{ title }}</h4>
+            <p class="form-page-subtitle">{% if object %}Update transaction details{% else %}Record a new transaction{% endif %}</p>
+        </div>
+    </div>
+    
+    <div class="form-card">
+        <form method="post" id="transactionForm">
+            {% csrf_token %}
+            
+            <!-- Transaction Type Toggle -->
+            <div class="type-toggle">
+                <label class="type-option">
+                    <input type="radio" name="transaction_type" value="debit" {% if form.transaction_type.value == 'debit' or not form.transaction_type.value %}checked{% endif %}>
+                    <span class="type-btn expense">
+                        <i class="bi bi-arrow-up-right"></i>
+                        Expense
+                    </span>
+                </label>
+                <label class="type-option">
+                    <input type="radio" name="transaction_type" value="credit" {% if form.transaction_type.value == 'credit' %}checked{% endif %}>
+                    <span class="type-btn income">
+                        <i class="bi bi-arrow-down-left"></i>
+                        Income
+                    </span>
+                </label>
+            </div>
+            
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="id_amount">Amount</label>
+                    <div class="amount-input">
+                        <span class="currency-symbol">रू</span>
+                        {{ form.amount }}
+                    </div>
+                    {% if form.amount.errors %}
+                    <span class="form-error">{{ form.amount.errors.0 }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_description">Description</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                    <span class="form-error">{{ form.description.errors.0 }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_date">Date</label>
+                        {{ form.date }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_account">Account</label>
+                        {{ form.account }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h6 class="form-section-title">Category</h6>
+                
+                <div class="form-group">
+                    <div class="category-autocomplete">
+                        <input type="text" 
+                               class="form-control" 
+                               id="categorySearch" 
+                               placeholder="Search categories..."
+                               autocomplete="off">
+                        <input type="hidden" name="category" id="id_category" value="{{ form.category.value|default:'' }}">
+                        <div class="category-suggestions" id="categorySuggestions"></div>
+                    </div>
+                    <div id="selectedCategoryDisplay" class="selected-category-display" style="display: none;">
+                        <span class="category-icon-preview" id="selectedCategoryIcon"></span>
+                        <span id="selectedCategoryName"></span>
+                        <span class="remove-btn" onclick="clearCategory()"><i class="bi bi-x-lg"></i></span>
+                    </div>
+                    <!-- Dropdown for existing categories -->
+                    <select class="form-select mt-2" id="categoryDropdown">
+                        <option value="">Select from list...</option>
+                        {% for choice in form.category.field.queryset %}
+                        <option value="{{ choice.id }}" 
+                                data-color="{{ choice.color }}" 
+                                data-icon="{{ choice.icon }}"
+                                {% if form.category.value|stringformat:"s" == choice.id|stringformat:"s" %}selected{% endif %}>
+                            {{ choice.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_subcategory">Subcategory <span class="optional">(Optional)</span></label>
+                    {{ form.subcategory }}
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="id_notes">Notes <span class="optional">(Optional)</span></label>
+                    {{ form.notes }}
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <a href="{% url 'transactions:list' %}" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-dark">
+                    <i class="bi bi-check-lg me-2"></i>{{ button_text }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
 {% block extra_css %}
 <style>
+.form-page-container {
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+.form-page-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.back-btn:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.form-page-title {
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.form-page-subtitle {
+    color: #6b7280;
+    margin: 4px 0 0 0;
+    font-size: 14px;
+}
+
+/* Form Card */
+.form-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid #f3f4f6;
+}
+
+/* Type Toggle */
+.type-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.type-option {
+    cursor: pointer;
+}
+
+.type-option input {
+    display: none;
+}
+
+.type-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px;
+    border-radius: 12px;
+    font-weight: 500;
+    border: 2px solid #e5e7eb;
+    transition: all 0.2s;
+}
+
+.type-btn.expense {
+    color: #6b7280;
+}
+
+.type-btn.income {
+    color: #6b7280;
+}
+
+.type-option input:checked + .type-btn.expense {
+    background: #fef2f2;
+    border-color: #f43f5e;
+    color: #f43f5e;
+}
+
+.type-option input:checked + .type-btn.income {
+    background: #ecfdf5;
+    border-color: #10b981;
+    color: #10b981;
+}
+
+/* Form Sections */
+.form-section {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.form-section:last-of-type {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.form-section-title {
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 16px 0;
+    font-size: 14px;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.form-group label .optional {
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #111827;
+    box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* Amount Input */
+.amount-input {
+    position: relative;
+}
+
+.amount-input .currency-symbol {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.amount-input input {
+    padding-left: 36px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.form-error {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Category Autocomplete */
 .category-autocomplete {
     position: relative;
 }
+
 .category-suggestions {
     position: absolute;
     top: 100%;
     left: 0;
     right: 0;
     background: white;
-    border: 1px solid #dee2e6;
+    border: 1px solid #e5e7eb;
     border-top: none;
-    border-radius: 0 0 8px 8px;
+    border-radius: 0 0 10px 10px;
     max-height: 250px;
     overflow-y: auto;
     z-index: 1000;
     display: none;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
+
 .category-suggestions.show {
     display: block;
 }
+
 .category-suggestion {
-    padding: 10px 15px;
+    padding: 10px 14px;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 10px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f3f4f6;
 }
+
 .category-suggestion:last-child {
     border-bottom: none;
 }
+
 .category-suggestion:hover {
-    background-color: #f8f9fa;
+    background-color: #f9fafb;
 }
+
 .category-suggestion.selected {
-    background-color: #e9ecef;
+    background-color: #f3f4f6;
 }
+
 .category-icon-preview {
     width: 32px;
     height: 32px;
-    border-radius: 6px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
+
 .category-suggestion-info {
     flex: 1;
 }
+
 .category-suggestion-name {
     font-weight: 500;
+    color: #111827;
 }
+
 .category-suggestion-type {
     font-size: 12px;
-    color: #6c757d;
+    color: #9ca3af;
 }
+
 .selected-category-display {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: #f8f9fa;
-    border-radius: 6px;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #f3f4f6;
+    border-radius: 10px;
     margin-top: 8px;
 }
+
 .selected-category-display .remove-btn {
     margin-left: auto;
     cursor: pointer;
-    color: #6c757d;
+    color: #9ca3af;
+    transition: color 0.2s;
 }
+
 .selected-category-display .remove-btn:hover {
-    color: #dc3545;
+    color: #dc2626;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #f3f4f6;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
 }
 </style>
-{% endblock %}
-
-{% block content %}
-<div class="container-fluid px-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <div class="d-flex align-items-center mb-4">
-                <a href="{% url 'transactions:list' %}" class="btn btn-link text-muted me-2">
-                    <i class="bi bi-arrow-left"></i>
-                </a>
-                <h4 class="mb-0">{{ title }}</h4>
-            </div>
-            
-            <div class="card">
-                <div class="card-body">
-                    <form method="post" id="transactionForm">
-                        {% csrf_token %}
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="id_date" class="form-label">Date</label>
-                                {{ form.date }}
-                                {% if form.date.errors %}
-                                <div class="invalid-feedback d-block">{{ form.date.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="id_transaction_type" class="form-label">Type</label>
-                                {{ form.transaction_type }}
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="id_description" class="form-label">Description</label>
-                            {{ form.description }}
-                            {% if form.description.errors %}
-                            <div class="invalid-feedback d-block">{{ form.description.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="id_amount" class="form-label">Amount</label>
-                                {{ form.amount }}
-                                {% if form.amount.errors %}
-                                <div class="invalid-feedback d-block">{{ form.amount.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="id_account" class="form-label">Account</label>
-                                {{ form.account }}
-                                {% if form.account.errors %}
-                                <div class="invalid-feedback d-block">{{ form.account.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Category</label>
-                                <div class="category-autocomplete">
-                                    <input type="text" 
-                                           class="form-control" 
-                                           id="categorySearch" 
-                                           placeholder="Type to search or select..."
-                                           autocomplete="off">
-                                    <input type="hidden" name="category" id="id_category" value="{{ form.category.value|default:'' }}">
-                                    <div class="category-suggestions" id="categorySuggestions"></div>
-                                </div>
-                                <div id="selectedCategoryDisplay" class="selected-category-display" style="display: none;">
-                                    <span class="category-icon-preview" id="selectedCategoryIcon"></span>
-                                    <span id="selectedCategoryName"></span>
-                                    <span class="remove-btn" onclick="clearCategory()"><i class="bi bi-x-lg"></i></span>
-                                </div>
-                                <!-- Dropdown for existing categories -->
-                                <select class="form-select mt-2" id="categoryDropdown">
-                                    <option value="">-- Or select from list --</option>
-                                    {% for choice in form.category.field.queryset %}
-                                    <option value="{{ choice.id }}" 
-                                            data-color="{{ choice.color }}" 
-                                            data-icon="{{ choice.icon }}"
-                                            {% if form.category.value|stringformat:"s" == choice.id|stringformat:"s" %}selected{% endif %}>
-                                        {{ choice.name }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="id_subcategory" class="form-label">Subcategory</label>
-                                {{ form.subcategory }}
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="id_notes" class="form-label">Notes (Optional)</label>
-                            {{ form.notes }}
-                        </div>
-                        
-                        <hr class="my-4">
-                        
-                        <div class="d-flex justify-content-end gap-2">
-                            <a href="{% url 'transactions:list' %}" class="btn btn-outline-secondary">Cancel</a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-lg me-2"></i>{{ button_text }}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -203,7 +439,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedName = document.getElementById('selectedCategoryName');
     const categoryDropdown = document.getElementById('categoryDropdown');
     const subcategorySelect = document.getElementById('id_subcategory');
-    const transactionType = document.getElementById('id_transaction_type');
+    const typeInputs = document.querySelectorAll('input[name="transaction_type"]');
     
     let selectedIndex = -1;
     let currentSuggestions = [];
@@ -221,6 +457,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Get current transaction type
+    function getTransactionType() {
+        const checked = document.querySelector('input[name="transaction_type"]:checked');
+        return checked ? (checked.value === 'credit' ? 'income' : 'expense') : 'expense';
+    }
+    
     // Search input handler
     categorySearch.addEventListener('input', function() {
         const query = this.value.trim();
@@ -229,7 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        const type = transactionType.value === 'credit' ? 'income' : 'expense';
+        const type = getTransactionType();
         
         fetch(`/categories/api/search/?q=${encodeURIComponent(query)}&type=${type}`)
             .then(response => response.json())
@@ -291,10 +533,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Transaction type change - refresh suggestions
-    transactionType.addEventListener('change', function() {
-        if (categorySearch.value) {
-            categorySearch.dispatchEvent(new Event('input'));
-        }
+    typeInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            if (categorySearch.value) {
+                categorySearch.dispatchEvent(new Event('input'));
+            }
+        });
     });
     
     function displaySuggestions(categories) {

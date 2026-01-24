@@ -1,84 +1,382 @@
 {% extends 'base.html' %}
 
 {% block title %}Categories - Finance Tracker{% endblock %}
+{% block page_title %}Categories{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0">Categories</h4>
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
         <div>
-            <a href="{% url 'categories:subcategory_create' %}" class="btn btn-outline-primary me-2">
-                <i class="bi bi-plus-lg me-2"></i>Add Subcategory
+            <h4 class="page-title">Categories</h4>
+            <p class="page-subtitle">Organize your transactions</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'categories:subcategory_create' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-plus-lg me-2"></i>Subcategory
             </a>
-            <a href="{% url 'categories:create' %}" class="btn btn-primary">
+            <a href="{% url 'categories:create' %}" class="btn btn-dark">
                 <i class="bi bi-plus-lg me-2"></i>Add Category
             </a>
         </div>
     </div>
-    
-    <div class="row g-3">
+
+    <!-- Category Type Tabs -->
+    <div class="category-tabs">
+        <button class="tab-btn active" data-filter="all">All</button>
+        <button class="tab-btn" data-filter="expense">Expense</button>
+        <button class="tab-btn" data-filter="income">Income</button>
+        <button class="tab-btn" data-filter="both">Both</button>
+    </div>
+
+    <!-- Categories Grid -->
+    <div class="categories-grid">
         {% for category in categories %}
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div class="d-flex align-items-center">
-                            <div class="category-icon me-3" style="color: {{ category.color }}; background-color: {{ category.color }}20;">
-                                <i class="{{ category.icon }} fs-4"></i>
-                            </div>
-                            <div>
-                                <h6 class="mb-0">{{ category.name }}</h6>
-                                <small class="text-muted">{{ category.get_category_type_display }}</small>
-                            </div>
-                        </div>
-                        <div class="dropdown">
-                            <button class="btn btn-link btn-sm text-muted" data-bs-toggle="dropdown">
-                                <i class="bi bi-three-dots-vertical"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{% url 'categories:edit' category.pk %}"><i class="bi bi-pencil me-2"></i>Edit</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="{% url 'categories:delete' category.pk %}"><i class="bi bi-trash me-2"></i>Delete</a></li>
-                            </ul>
-                        </div>
+        <div class="category-card" data-type="{{ category.category_type }}">
+            <div class="category-card-header">
+                <div class="category-icon-lg" style="background: {{ category.color }}15; color: {{ category.color }};">
+                    <i class="{{ category.icon }}"></i>
+                </div>
+                <div class="category-actions">
+                    <div class="dropdown">
+                        <button class="btn-icon-mini" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'categories:edit' category.pk %}"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'categories:delete' category.pk %}"><i class="bi bi-trash me-2"></i>Delete</a></li>
+                        </ul>
                     </div>
-                    
-                    {% if category.subcategories.exists %}
-                    <div class="subcategories mt-3">
-                        <p class="text-muted small mb-2">Subcategories:</p>
-                        <div class="d-flex flex-wrap gap-1">
-                            {% for sub in category.subcategories.all %}
-                            <span class="badge bg-light text-dark">
-                                {{ sub.name }}
-                                <a href="{% url 'categories:subcategory_delete' sub.pk %}" class="text-muted ms-1" title="Delete">
-                                    <i class="bi bi-x"></i>
-                                </a>
-                            </span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if not category.is_active %}
-                    <span class="badge bg-secondary mt-2">Inactive</span>
-                    {% endif %}
                 </div>
             </div>
+            
+            <div class="category-card-body">
+                <h6 class="category-name">{{ category.name }}</h6>
+                <span class="category-type-badge {{ category.category_type }}">
+                    {{ category.get_category_type_display }}
+                </span>
+            </div>
+            
+            {% if category.subcategories.exists %}
+            <div class="category-subcategories">
+                <span class="subcategory-label">Subcategories</span>
+                <div class="subcategory-list">
+                    {% for sub in category.subcategories.all %}
+                    <span class="subcategory-tag">
+                        {{ sub.name }}
+                        <a href="{% url 'categories:subcategory_delete' sub.pk %}" class="subcategory-remove" title="Delete">
+                            <i class="bi bi-x"></i>
+                        </a>
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
         {% empty %}
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body text-center py-5">
-                    <i class="bi bi-tags display-4 text-muted mb-3"></i>
-                    <h5>No categories yet</h5>
-                    <p class="text-muted">Create categories to organize your transactions.</p>
-                    <a href="{% url 'categories:create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-lg me-2"></i>Add Category
-                    </a>
-                </div>
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="bi bi-tags"></i>
             </div>
+            <h5>No categories yet</h5>
+            <p>Create categories to organize your transactions</p>
+            <a href="{% url 'categories:create' %}" class="btn btn-dark">
+                <i class="bi bi-plus-lg me-2"></i>Add Category
+            </a>
         </div>
         {% endfor %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.page-title {
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.page-subtitle {
+    color: #6b7280;
+    margin: 4px 0 0 0;
+    font-size: 14px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* Category Tabs */
+.category-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    background: white;
+    padding: 6px;
+    border-radius: 12px;
+    width: fit-content;
+    border: 1px solid #f3f4f6;
+}
+
+.tab-btn {
+    padding: 8px 20px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    color: #111827;
+}
+
+.tab-btn.active {
+    background: #111827;
+    color: white;
+}
+
+/* Categories Grid */
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.category-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid #f3f4f6;
+    transition: all 0.2s;
+}
+
+.category-card:hover {
+    border-color: #e5e7eb;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.category-card.hidden {
+    display: none;
+}
+
+.category-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.category-icon-lg {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+
+.btn-icon-mini {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon-mini:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.category-card-body {
+    margin-bottom: 16px;
+}
+
+.category-name {
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 8px 0;
+    font-size: 16px;
+}
+
+.category-type-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.category-type-badge.expense {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.category-type-badge.income {
+    background: #ecfdf5;
+    color: #059669;
+}
+
+.category-type-badge.both {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+/* Subcategories */
+.category-subcategories {
+    padding-top: 16px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.subcategory-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #9ca3af;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.subcategory-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.subcategory-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: #f3f4f6;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #374151;
+}
+
+.subcategory-remove {
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.subcategory-remove:hover {
+    color: #dc2626;
+}
+
+/* Empty State */
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 16px;
+    border: 2px dashed #e5e7eb;
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 32px;
+    color: #9ca3af;
+}
+
+.empty-state h5 {
+    color: #111827;
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    color: #6b7280;
+    margin-bottom: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .header-actions {
+        width: 100%;
+    }
+    
+    .header-actions .btn {
+        flex: 1;
+    }
+    
+    .category-tabs {
+        width: 100%;
+        overflow-x: auto;
+    }
+    
+    .categories-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('.tab-btn');
+    const cards = document.querySelectorAll('.category-card');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Update active tab
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            const filter = this.dataset.filter;
+            
+            // Filter cards
+            cards.forEach(card => {
+                if (filter === 'all' || card.dataset.type === filter) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        });
+    });
+});
+</script>
 {% endblock %}
