@@ -32,7 +32,12 @@
             
             <div class="mb-3">
                 <label for="id_password" class="form-label">Password</label>
-                {{ form.password }}
+                <div class="input-group">
+                    {{ form.password }}
+                    <button class="btn btn-outline-secondary password-toggle" type="button" data-target="id_password">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
                 {% if form.password.errors %}
                 <div class="invalid-feedback d-block">{{ form.password.errors.0 }}</div>
                 {% endif %}
@@ -52,3 +57,25 @@
     </div>
 </div>
 {% endblock auth_content %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.password-toggle').forEach(function(button) {
+    button.addEventListener('click', function() {
+        const targetId = this.getAttribute('data-target');
+        const input = document.getElementById(targetId);
+        const icon = this.querySelector('i');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('bi-eye');
+            icon.classList.add('bi-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('bi-eye-slash');
+            icon.classList.add('bi-eye');
+        }
+    });
+});
+</script>
+{% endblock %}

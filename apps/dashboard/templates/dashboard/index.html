@@ -4,179 +4,594 @@
 {% block title %}Dashboard - Finance Tracker{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-    <h4 class="mb-4">Dashboard</h4>
-    
-    <!-- Summary Cards -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="card summary-card h-100">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Total Balance</p>
-                    <h3 class="mb-0">{{ currency_symbol }}{{ total_balance|floatformat:2|intcomma }}</h3>
-                    <small class="text-muted">All Accounts</small>
+<div class="dashboard-container">
+    <!-- Header Section -->
+    <div class="dashboard-header">
+        <div>
+            <h4 class="mb-1">Welcome back, {{ user.first_name|default:user.username }}!</h4>
+            <p class="text-muted mb-0">Here's your financial overview</p>
+        </div>
+        <a href="{% url 'transactions:create' %}" class="btn btn-dark btn-add-transaction">
+            <i class="bi bi-plus-lg me-2"></i>New Transaction
+        </a>
+    </div>
+
+    <!-- Balance Overview - Single Card Design -->
+    <div class="balance-card">
+        <div class="balance-main">
+            <span class="balance-label">Available Balance</span>
+            <h2 class="balance-amount">{{ currency_symbol }}{{ current_balance|floatformat:0|intcomma }}</h2>
+            <span class="balance-subtext">of {{ currency_symbol }}{{ total_balance|floatformat:0|intcomma }} total</span>
+        </div>
+        <div class="balance-divider"></div>
+        <div class="balance-breakdown">
+            <div class="breakdown-item">
+                <div class="breakdown-icon income">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <div class="breakdown-info">
+                    <span class="breakdown-label">Total Balance</span>
+                    <span class="breakdown-value">{{ currency_symbol }}{{ total_balance|floatformat:0|intcomma }}</span>
                 </div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card summary-card h-100">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Total Savings</p>
-                    <h3 class="mb-0 text-success">{{ currency_symbol }}{{ savings_balance|floatformat:2|intcomma }}</h3>
-                    <small class="text-muted">Set Aside</small>
+            <div class="breakdown-item">
+                <div class="breakdown-icon savings">
+                    <i class="bi bi-piggy-bank"></i>
                 </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card summary-card h-100">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Current Balance</p>
-                    <h3 class="mb-0 {% if current_balance >= 0 %}text-primary{% else %}text-danger{% endif %}">{{ currency_symbol }}{{ current_balance|floatformat:2|intcomma }}</h3>
-                    <small class="text-muted">Spendable Amount</small>
+                <div class="breakdown-info">
+                    <span class="breakdown-label">Savings</span>
+                    <span class="breakdown-value">{{ currency_symbol }}{{ savings_balance|floatformat:0|intcomma }}</span>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Charts Row -->
-    <div class="row g-3 mb-4">
-        <!-- Category Pie Chart -->
-        <div class="col-lg-5">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h6 class="card-title">Expenses by Category</h6>
-                    <div class="chart-container" style="position: relative; height: 280px;">
-                        <canvas id="categoryChart"></canvas>
-                    </div>
-                </div>
+
+    <!-- Charts Row - Side by Side -->
+    <div class="charts-row">
+        <!-- Income vs Expenses Chart -->
+        <div class="card chart-card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Income vs Expenses</h6>
+                <span class="chart-period">Last 6 months</span>
+            </div>
+            <div class="card-body">
+                <canvas id="incomeExpenseChart" height="220"></canvas>
             </div>
         </div>
-        
-        <!-- Income vs Expense Chart -->
-        <div class="col-lg-7">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h6 class="card-title">Income vs Expenses</h6>
-                    <div class="chart-container" style="position: relative; height: 280px;">
-                        <canvas id="incomeExpenseChart"></canvas>
-                    </div>
+
+        <!-- Spending by Category Chart -->
+        <div class="card chart-card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Spending by Category</h6>
+                <span class="chart-period">This month</span>
+            </div>
+            <div class="card-body">
+                <div class="category-chart-wrapper">
+                    <canvas id="categoryChart"></canvas>
+                    <div class="category-legend" id="categoryLegend"></div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Bottom Row -->
-    <div class="row g-3">
-        <!-- Recent Transactions -->
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="card-title mb-0">Recent Transactions</h6>
-                        <a href="{% url 'transactions:list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+
+    <!-- Bottom Row - Accounts & Transactions -->
+    <div class="bottom-row">
+        <!-- Accounts Grid -->
+        <div class="card accounts-card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Accounts</h6>
+                <a href="{% url 'wallets:create' %}" class="btn-icon-sm"><i class="bi bi-plus"></i></a>
+            </div>
+            <div class="card-body">
+                <div class="accounts-grid">
+                    {% for account in accounts|slice:":6" %}
+                    <a href="{% url 'wallets:detail' account.pk %}" class="account-box">
+                        <div class="account-box-icon" style="background: {{ account.color }}15; color: {{ account.color }};">
+                            <i class="{{ account.icon }}"></i>
+                        </div>
+                        <div class="account-box-name">{{ account.name }}</div>
+                        <div class="account-box-balance {% if account.actual_balance < 0 %}text-danger{% endif %}">
+                            {{ currency_symbol }}{{ account.actual_balance|floatformat:0|intcomma }}
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="text-center py-4 text-muted" style="grid-column: 1/-1;">
+                        <p class="mb-2">No accounts yet</p>
+                        <a href="{% url 'wallets:create' %}" class="btn btn-sm btn-outline-dark">Add Account</a>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Description</th>
-                                    <th>Category</th>
-                                    <th class="text-end">Credit</th>
-                                    <th class="text-end">Debit</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for transaction in recent_transactions %}
-                                <tr>
-                                    <td>{{ transaction.date|date:"d M Y" }}</td>
-                                    <td>{{ transaction.description }}</td>
-                                    <td>
-                                        {% if transaction.category %}
-                                        <span class="badge" style="background-color: {{ transaction.category.color }}">
-                                            <i class="{{ transaction.category.icon }} me-1"></i>
-                                            {{ transaction.category.name }}
-                                        </span>
-                                        {% else %}
-                                        <span class="text-muted">-</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-end">
-                                        {% if transaction.is_credit %}
-                                        <span class="text-success">{{ currency_symbol }}{{ transaction.amount|floatformat:2|intcomma }}</span>
-                                        {% else %}
-                                        -
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-end">
-                                        {% if transaction.is_debit %}
-                                        <span class="text-danger">{{ currency_symbol }}{{ transaction.amount|floatformat:2|intcomma }}</span>
-                                        {% else %}
-                                        -
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">
-                                        No transactions yet. <a href="{% url 'transactions:create' %}">Add your first transaction</a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                    {% endfor %}
                 </div>
+                {% if accounts|length > 6 %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'wallets:list' %}" class="view-all-link">View all accounts <i class="bi bi-arrow-right"></i></a>
+                </div>
+                {% endif %}
             </div>
         </div>
-        
-        <!-- Wallet Balances -->
-        <div class="col-lg-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="card-title mb-0">Wallet</h6>
-                        <a href="{% url 'wallets:create' %}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-plus"></i>
-                        </a>
-                    </div>
-                    <div class="wallet-list">
-                        {% for wallet in wallet_balances %}
-                        <div class="wallet-item d-flex justify-content-between align-items-center py-2 border-bottom">
-                            <div class="d-flex align-items-center">
-                                <div class="wallet-icon me-3" style="color: {{ wallet.color }}">
-                                    <i class="{{ wallet.icon }} fs-4"></i>
-                                </div>
-                                <div>
-                                    <p class="mb-0 fw-medium">{{ wallet.name }}</p>
-                                    <small class="text-muted">{{ wallet.type }}</small>
-                                </div>
-                            </div>
-                            <span class="fw-semibold">{{ currency_symbol }}{{ wallet.balance|floatformat:2|intcomma }}</span>
+
+        <!-- Recent Transactions - Only 4 -->
+        <div class="card transactions-card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Recent Transactions</h6>
+                <a href="{% url 'transactions:create' %}" class="btn-icon-sm"><i class="bi bi-plus"></i></a>
+            </div>
+            <div class="card-body p-0">
+                <div class="transactions-list">
+                    {% for transaction in recent_transactions|slice:":4" %}
+                    <a href="{% url 'transactions:detail' transaction.pk %}" class="transaction-item">
+                        <div class="transaction-icon" style="background: {% if transaction.category %}{{ transaction.category.color }}15{% else %}#f3f4f6{% endif %}; color: {% if transaction.category %}{{ transaction.category.color }}{% else %}#6b7280{% endif %};">
+                            <i class="{% if transaction.category %}{{ transaction.category.icon }}{% else %}bi-receipt{% endif %}"></i>
                         </div>
-                        {% empty %}
-                        <div class="text-center text-muted py-4">
-                            No accounts yet. <a href="{% url 'wallets:create' %}">Add an account</a>
+                        <div class="transaction-info">
+                            <span class="transaction-desc">{{ transaction.description|truncatewords:4 }}</span>
+                            <span class="transaction-date">{{ transaction.date|date:"d M" }}</span>
                         </div>
-                        {% endfor %}
+                        <span class="transaction-amount {% if transaction.is_credit %}income{% else %}expense{% endif %}">
+                            {% if transaction.is_credit %}+{% else %}-{% endif %}{{ currency_symbol }}{{ transaction.amount|floatformat:0|intcomma }}
+                        </span>
+                    </a>
+                    {% empty %}
+                    <div class="text-center py-4 text-muted">
+                        <p class="mb-2">No transactions yet</p>
+                        <a href="{% url 'transactions:create' %}" class="btn btn-sm btn-outline-dark">Add Transaction</a>
                     </div>
+                    {% endfor %}
                 </div>
             </div>
+            {% if recent_transactions %}
+            <div class="card-footer">
+                <a href="{% url 'transactions:list' %}" class="view-all-link">View all transactions <i class="bi bi-arrow-right"></i></a>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
+
+<!-- Floating Action Button for Mobile -->
+<a href="{% url 'transactions:create' %}" class="fab d-lg-none">
+    <i class="bi bi-plus-lg"></i>
+</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Dashboard Container */
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Header */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.dashboard-header h4 {
+    font-weight: 600;
+    color: #111827;
+}
+
+.btn-add-transaction {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+/* Balance Card */
+.balance-card {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 20px;
+    padding: 32px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    margin-bottom: 24px;
+}
+
+.balance-main {
+    flex: 1;
+}
+
+.balance-label {
+    font-size: 14px;
+    opacity: 0.7;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.balance-amount {
+    font-size: 42px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -1px;
+}
+
+.balance-subtext {
+    font-size: 14px;
+    opacity: 0.6;
+}
+
+.balance-divider {
+    width: 1px;
+    height: 80px;
+    background: rgba(255,255,255,0.2);
+}
+
+.balance-breakdown {
+    display: flex;
+    gap: 32px;
+}
+
+.breakdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.breakdown-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.breakdown-icon.income {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.breakdown-icon.savings {
+    background: rgba(99, 102, 241, 0.2);
+    color: #818cf8;
+}
+
+.breakdown-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.breakdown-label {
+    font-size: 12px;
+    opacity: 0.6;
+}
+
+.breakdown-value {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* Charts Row - Side by Side */
+.charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+/* Bottom Row */
+.bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+/* Cards */
+.card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    background: white;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: none;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.card-title {
+    font-weight: 600;
+    color: #111827;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.card-footer {
+    padding: 12px 20px;
+    background: none;
+    border-top: 1px solid #f3f4f6;
+}
+
+.chart-period {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.btn-icon-sm {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    background: #f3f4f6;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.btn-icon-sm:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+/* Category Chart */
+.category-chart-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+}
+
+.category-chart-wrapper canvas {
+    max-width: 160px;
+    max-height: 160px;
+}
+
+.category-legend {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 24px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #374151;
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+/* Accounts Grid */
+.accounts-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.account-box {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 16px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.account-box:hover {
+    background: #f3f4f6;
+    transform: translateY(-2px);
+}
+
+.account-box-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    margin: 0 auto 10px;
+}
+
+.account-box-name {
+    font-weight: 500;
+    font-size: 13px;
+    color: #374151;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.account-box-balance {
+    font-weight: 600;
+    font-size: 14px;
+    color: #111827;
+}
+
+/* Transactions List */
+.transactions-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.transaction-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.2s;
+    border-bottom: 1px solid #f9fafb;
+}
+
+.transaction-item:last-child {
+    border-bottom: none;
+}
+
+.transaction-item:hover {
+    background: #f9fafb;
+}
+
+.transaction-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.transaction-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.transaction-desc {
+    font-weight: 500;
+    color: #111827;
+    font-size: 14px;
+}
+
+.transaction-date {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.transaction-amount {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.transaction-amount.income {
+    color: #10b981;
+}
+
+.transaction-amount.expense {
+    color: #111827;
+}
+
+.view-all-link {
+    font-size: 13px;
+    color: #6b7280;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.view-all-link:hover {
+    color: #111827;
+}
+
+/* Floating Action Button */
+.fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: #111827;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    z-index: 100;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.fab:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .charts-row,
+    .bottom-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .accounts-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .balance-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 24px;
+        padding: 24px;
+    }
+    
+    .balance-divider {
+        width: 100%;
+        height: 1px;
+    }
+    
+    .balance-amount {
+        font-size: 32px;
+    }
+    
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .btn-add-transaction {
+        display: none;
+    }
+    
+    .accounts-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .category-chart-wrapper {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .category-chart-wrapper canvas {
+        max-width: 140px;
+        max-height: 140px;
+    }
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Parse chart data from Django
-    const chartData = {{ chart_data|safe }};
-    const categoryData = {{ category_data|safe }};
+    // Chart.js default styling
+    Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
+    Chart.defaults.color = '#6b7280';
     
-    // Income vs Expense Bar Chart
-    const incomeExpenseCtx = document.getElementById('incomeExpenseChart').getContext('2d');
-    new Chart(incomeExpenseCtx, {
+    // Income vs Expense Chart
+    const chartData = {{ chart_data|safe }};
+    const ctx1 = document.getElementById('incomeExpenseChart').getContext('2d');
+    
+    new Chart(ctx1, {
         type: 'bar',
         data: {
             labels: chartData.labels,
@@ -184,14 +599,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 {
                     label: 'Income',
                     data: chartData.income,
-                    backgroundColor: '#28a745',
-                    borderRadius: 4,
+                    backgroundColor: '#10b981',
+                    borderRadius: 6,
+                    borderSkipped: false,
                 },
                 {
                     label: 'Expenses',
                     data: chartData.expenses,
-                    backgroundColor: '#dc3545',
-                    borderRadius: 4,
+                    backgroundColor: '#f43f5e',
+                    borderRadius: 6,
+                    borderSkipped: false,
                 }
             ]
         },
@@ -201,14 +618,30 @@ document.addEventListener('DOMContentLoaded', function() {
             plugins: {
                 legend: {
                     position: 'top',
+                    align: 'end',
+                    labels: {
+                        boxWidth: 8,
+                        boxHeight: 8,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        padding: 16,
+                        font: { size: 12 }
+                    }
                 }
             },
             scales: {
+                x: {
+                    grid: { display: false },
+                    border: { display: false },
+                    ticks: { font: { size: 12 } }
+                },
                 y: {
-                    beginAtZero: true,
+                    grid: { color: '#f3f4f6' },
+                    border: { display: false },
                     ticks: {
+                        font: { size: 11 },
                         callback: function(value) {
-                            return '{{ currency_symbol }}' + value.toLocaleString();
+                            return '{{ currency_symbol }}' + (value/1000) + 'k';
                         }
                     }
                 }
@@ -216,32 +649,45 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Category Pie Chart
-    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-    new Chart(categoryCtx, {
+    // Category Doughnut Chart - Using category colors from data
+    const categoryData = {{ category_data|safe }};
+    const ctx2 = document.getElementById('categoryChart').getContext('2d');
+    
+    // Use colors from category data if available, otherwise use defaults
+    const chartColors = categoryData.colors && categoryData.colors.length > 0 
+        ? categoryData.colors 
+        : ['#6366f1', '#ec4899', '#f97316', '#22c55e', '#eab308', '#8b5cf6', '#f43f5e', '#14b8a6', '#06b6d4', '#3b82f6'];
+    
+    new Chart(ctx2, {
         type: 'doughnut',
         data: {
             labels: categoryData.labels,
             datasets: [{
                 data: categoryData.data,
-                backgroundColor: categoryData.colors,
-                borderWidth: 2,
-                borderColor: '#fff',
+                backgroundColor: chartColors.slice(0, categoryData.labels.length),
+                borderWidth: 0,
+                cutout: '65%'
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
             plugins: {
-                legend: {
-                    position: 'right',
-                    labels: {
-                        boxWidth: 12,
-                        padding: 15
-                    }
-                }
+                legend: { display: false }
             }
         }
+    });
+    
+    // Build custom legend
+    const legendContainer = document.getElementById('categoryLegend');
+    categoryData.labels.forEach((label, index) => {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.innerHTML = `
+            <span class="legend-dot" style="background: ${chartColors[index]}"></span>
+            <span>${label}</span>
+        `;
+        legendContainer.appendChild(item);
     });
 });
 </script>

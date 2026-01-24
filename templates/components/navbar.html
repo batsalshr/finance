@@ -1,31 +1,85 @@
 <nav class="top-navbar">
     <div class="d-flex align-items-center">
-        <button class="btn btn-link sidebar-toggle d-lg-none" id="sidebarToggle">
+        <button class="btn btn-link sidebar-toggle d-lg-none me-2" id="sidebarToggle">
             <i class="bi bi-list fs-4"></i>
         </button>
-        <div class="search-box d-none d-md-block">
-            <form action="{% url 'transactions:list' %}" method="GET">
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0">
-                        <i class="bi bi-search text-muted"></i>
-                    </span>
-                    <input type="text" name="search" class="form-control border-start-0" placeholder="Search transactions...">
-                </div>
-            </form>
-        </div>
+        <h5 class="page-title mb-0 d-none d-md-block">{% block page_title %}Dashboard{% endblock %}</h5>
     </div>
     
-    <div class="navbar-actions">
-        <a href="{% url 'transactions:create' %}" class="btn btn-primary btn-sm">
-            <i class="bi bi-plus-lg"></i>
-            <span class="d-none d-md-inline">Add Transaction</span>
-        </a>
-        <div class="dropdown ms-2">
-            <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+    <div class="navbar-actions d-flex align-items-center gap-2">
+        <!-- Notification Dropdown -->
+        <div class="dropdown">
+            <button class="btn btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="notificationDropdownBtn">
                 <i class="bi bi-bell"></i>
+                {% if messages %}
+                <span class="notification-dot"></span>
+                {% endif %}
+            </button>
+            <div class="dropdown-menu dropdown-menu-end notification-dropdown p-0" style="min-width: 320px; max-height: 400px; overflow-y: auto;">
+                <div class="dropdown-header d-flex justify-content-between align-items-center py-2 px-3">
+                    <span class="fw-semibold">Notifications</span>
+                    <button class="btn btn-sm btn-link text-muted p-0" onclick="clearAllNotifications()" style="font-size: 12px;">Clear all</button>
+                </div>
+                <div id="notificationList">
+                    {% for message in messages %}
+                    <div class="notification-item px-3 py-2 border-bottom" data-notification-id="{{ forloop.counter }}">
+                        <div class="d-flex align-items-start">
+                            <div class="notification-icon me-2 mt-1">
+                                {% if message.tags == 'success' %}
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                {% elif message.tags == 'error' or message.tags == 'danger' %}
+                                <i class="bi bi-x-circle-fill text-danger"></i>
+                                {% elif message.tags == 'warning' %}
+                                <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                                {% else %}
+                                <i class="bi bi-info-circle-fill text-info"></i>
+                                {% endif %}
+                            </div>
+                            <div class="notification-content flex-grow-1">
+                                <p class="mb-0 small">{{ message }}</p>
+                                <small class="text-muted" style="font-size: 11px;">Just now</small>
+                            </div>
+                            <button class="btn btn-sm btn-link text-muted p-0 ms-2" onclick="dismissNotification(this)">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-4" id="noNotifications">
+                        <i class="bi bi-bell-slash fs-4 mb-2 d-block opacity-50"></i>
+                        <span class="small">No new notifications</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Profile Dropdown -->
+        <div class="dropdown">
+            <button class="btn btn-icon profile-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="profile-avatar-sm">
+                    {% if user.first_name %}
+                        {{ user.first_name|make_list|first }}{{ user.last_name|make_list|first }}
+                    {% else %}
+                        {{ user.username|make_list|first|upper }}
+                    {% endif %}
+                </div>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
-                <li><span class="dropdown-item-text text-muted">No new notifications</span></li>
+                <li class="dropdown-header">
+                    <strong>{{ user.get_full_name|default:user.username }}</strong>
+                    <br><small class="text-muted">{{ user.email }}</small>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="bi bi-person me-2"></i>Profile</a></li>
+                <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <form method="post" action="{% url 'accounts:logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-left me-2"></i>Log Out</button>
+                    </form>
+                </li>
             </ul>
         </div>
     </div>

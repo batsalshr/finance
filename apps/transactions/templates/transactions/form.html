@@ -2,6 +2,84 @@
 
 {% block title %}{{ title }} - Finance Tracker{% endblock %}
 
+{% block extra_css %}
+<style>
+.category-autocomplete {
+    position: relative;
+}
+.category-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.category-suggestions.show {
+    display: block;
+}
+.category-suggestion {
+    padding: 10px 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.category-suggestion:last-child {
+    border-bottom: none;
+}
+.category-suggestion:hover {
+    background-color: #f8f9fa;
+}
+.category-suggestion.selected {
+    background-color: #e9ecef;
+}
+.category-icon-preview {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.category-suggestion-info {
+    flex: 1;
+}
+.category-suggestion-name {
+    font-weight: 500;
+}
+.category-suggestion-type {
+    font-size: 12px;
+    color: #6c757d;
+}
+.selected-category-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    margin-top: 8px;
+}
+.selected-category-display .remove-btn {
+    margin-left: auto;
+    cursor: pointer;
+    color: #6c757d;
+}
+.selected-category-display .remove-btn:hover {
+    color: #dc3545;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid px-4">
     <div class="row justify-content-center">
@@ -15,7 +93,7 @@
             
             <div class="card">
                 <div class="card-body">
-                    <form method="post">
+                    <form method="post" id="transactionForm">
                         {% csrf_token %}
                         
                         <div class="row">
@@ -59,8 +137,33 @@
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="id_category" class="form-label">Category</label>
-                                {{ form.category }}
+                                <label class="form-label">Category</label>
+                                <div class="category-autocomplete">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="categorySearch" 
+                                           placeholder="Type to search or select..."
+                                           autocomplete="off">
+                                    <input type="hidden" name="category" id="id_category" value="{{ form.category.value|default:'' }}">
+                                    <div class="category-suggestions" id="categorySuggestions"></div>
+                                </div>
+                                <div id="selectedCategoryDisplay" class="selected-category-display" style="display: none;">
+                                    <span class="category-icon-preview" id="selectedCategoryIcon"></span>
+                                    <span id="selectedCategoryName"></span>
+                                    <span class="remove-btn" onclick="clearCategory()"><i class="bi bi-x-lg"></i></span>
+                                </div>
+                                <!-- Dropdown for existing categories -->
+                                <select class="form-select mt-2" id="categoryDropdown">
+                                    <option value="">-- Or select from list --</option>
+                                    {% for choice in form.category.field.queryset %}
+                                    <option value="{{ choice.id }}" 
+                                            data-color="{{ choice.color }}" 
+                                            data-icon="{{ choice.icon }}"
+                                            {% if form.category.value|stringformat:"s" == choice.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ choice.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="id_subcategory" class="form-label">Subcategory</label>
@@ -91,12 +194,177 @@
 
 {% block extra_js %}
 <script>
-// Dynamic subcategory loading
-document.getElementById('id_category').addEventListener('change', function() {
-    const categoryId = this.value;
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySearch = document.getElementById('categorySearch');
+    const categoryInput = document.getElementById('id_category');
+    const suggestions = document.getElementById('categorySuggestions');
+    const selectedDisplay = document.getElementById('selectedCategoryDisplay');
+    const selectedIcon = document.getElementById('selectedCategoryIcon');
+    const selectedName = document.getElementById('selectedCategoryName');
+    const categoryDropdown = document.getElementById('categoryDropdown');
     const subcategorySelect = document.getElementById('id_subcategory');
+    const transactionType = document.getElementById('id_transaction_type');
     
-    if (categoryId) {
+    let selectedIndex = -1;
+    let currentSuggestions = [];
+    
+    // Initialize if editing existing transaction
+    if (categoryInput.value) {
+        const selectedOption = categoryDropdown.querySelector(`option[value="${categoryInput.value}"]`);
+        if (selectedOption) {
+            showSelectedCategory(
+                categoryInput.value,
+                selectedOption.textContent.trim(),
+                selectedOption.dataset.color,
+                selectedOption.dataset.icon
+            );
+        }
+    }
+    
+    // Search input handler
+    categorySearch.addEventListener('input', function() {
+        const query = this.value.trim();
+        if (query.length < 1) {
+            hideSuggestions();
+            return;
+        }
+        
+        const type = transactionType.value === 'credit' ? 'income' : 'expense';
+        
+        fetch(`/categories/api/search/?q=${encodeURIComponent(query)}&type=${type}`)
+            .then(response => response.json())
+            .then(data => {
+                currentSuggestions = data.categories;
+                displaySuggestions(data.categories);
+            });
+    });
+    
+    // Keyboard navigation
+    categorySearch.addEventListener('keydown', function(e) {
+        const items = suggestions.querySelectorAll('.category-suggestion');
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+            updateSelection(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedIndex = Math.max(selectedIndex - 1, 0);
+            updateSelection(items);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (selectedIndex >= 0 && currentSuggestions[selectedIndex]) {
+                selectCategory(currentSuggestions[selectedIndex]);
+            }
+        } else if (e.key === 'Escape') {
+            hideSuggestions();
+        }
+    });
+    
+    // Click outside to close
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.category-autocomplete')) {
+            hideSuggestions();
+        }
+    });
+    
+    // Focus handler
+    categorySearch.addEventListener('focus', function() {
+        if (currentSuggestions.length > 0) {
+            suggestions.classList.add('show');
+        }
+    });
+    
+    // Dropdown change handler
+    categoryDropdown.addEventListener('change', function() {
+        const option = this.options[this.selectedIndex];
+        if (option.value) {
+            selectCategory({
+                id: option.value,
+                name: option.textContent.trim(),
+                color: option.dataset.color,
+                icon: option.dataset.icon
+            });
+        } else {
+            clearCategory();
+        }
+    });
+    
+    // Transaction type change - refresh suggestions
+    transactionType.addEventListener('change', function() {
+        if (categorySearch.value) {
+            categorySearch.dispatchEvent(new Event('input'));
+        }
+    });
+    
+    function displaySuggestions(categories) {
+        if (categories.length === 0) {
+            suggestions.innerHTML = '<div class="category-suggestion"><span class="text-muted">No categories found</span></div>';
+            suggestions.classList.add('show');
+            return;
+        }
+        
+        suggestions.innerHTML = categories.map((cat, index) => `
+            <div class="category-suggestion" data-index="${index}">
+                <span class="category-icon-preview" style="background-color: ${cat.color}20; color: ${cat.color};">
+                    <i class="${cat.icon}"></i>
+                </span>
+                <div class="category-suggestion-info">
+                    <div class="category-suggestion-name">${cat.name}</div>
+                    <div class="category-suggestion-type">${cat.type}</div>
+                </div>
+            </div>
+        `).join('');
+        
+        suggestions.querySelectorAll('.category-suggestion').forEach((item, index) => {
+            item.addEventListener('click', () => selectCategory(categories[index]));
+        });
+        
+        suggestions.classList.add('show');
+        selectedIndex = -1;
+    }
+    
+    function updateSelection(items) {
+        items.forEach((item, index) => {
+            item.classList.toggle('selected', index === selectedIndex);
+        });
+    }
+    
+    function selectCategory(cat) {
+        categoryInput.value = cat.id;
+        showSelectedCategory(cat.id, cat.name, cat.color, cat.icon);
+        hideSuggestions();
+        categorySearch.value = '';
+        categoryDropdown.value = cat.id;
+        
+        // Load subcategories
+        loadSubcategories(cat.id);
+    }
+    
+    function showSelectedCategory(id, name, color, icon) {
+        selectedIcon.style.backgroundColor = color + '20';
+        selectedIcon.style.color = color;
+        selectedIcon.innerHTML = `<i class="${icon}"></i>`;
+        selectedName.textContent = name;
+        selectedDisplay.style.display = 'flex';
+        categorySearch.style.display = 'none';
+    }
+    
+    function hideSuggestions() {
+        suggestions.classList.remove('show');
+        selectedIndex = -1;
+    }
+    
+    window.clearCategory = function() {
+        categoryInput.value = '';
+        categoryDropdown.value = '';
+        selectedDisplay.style.display = 'none';
+        categorySearch.style.display = 'block';
+        categorySearch.value = '';
+        subcategorySelect.innerHTML = '<option value="">---------</option>';
+    };
+    
+    function loadSubcategories(categoryId) {
         fetch(`/categories/api/subcategories/${categoryId}/`)
             .then(response => response.json())
             .then(data => {
@@ -105,8 +373,6 @@ document.getElementById('id_category').addEventListener('change', function() {
                     subcategorySelect.innerHTML += `<option value="${sub.id}">${sub.name}</option>`;
                 });
             });
-    } else {
-        subcategorySelect.innerHTML = '<option value="">---------</option>';
     }
 });
 </script>

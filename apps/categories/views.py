@@ -114,3 +114,32 @@ def get_subcategories(request, category_id):
     ).values('id', 'name')
     
     return JsonResponse({'subcategories': list(subcategories)})
+
+
+def search_categories(request):
+    """AJAX view to search/autocomplete categories"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    
+    query = request.GET.get('q', '').strip()
+    category_type = request.GET.get('type', '')  # 'income', 'expense', or ''
+    
+    categories = Category.objects.filter(is_active=True)
+    
+    if query:
+        categories = categories.filter(name__icontains=query)
+    
+    if category_type:
+        categories = categories.filter(category_type__in=[category_type, 'both'])
+    
+    results = []
+    for cat in categories[:10]:  # Limit to 10 results
+        results.append({
+            'id': cat.id,
+            'name': cat.name,
+            'color': cat.color,
+            'icon': cat.icon,
+            'type': cat.category_type,
+        })
+    
+    return JsonResponse({'categories': results})

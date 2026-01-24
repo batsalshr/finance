@@ -8,41 +8,53 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">Transactions</h4>
         <div>
-            <a href="{% url 'transactions:bulk_import' %}" class="btn btn-outline-primary me-2">
+            <a href="{% url 'transactions:bulk_import' %}" class="btn btn-outline-secondary me-2">
                 <i class="bi bi-upload me-2"></i>Import CSV
             </a>
-            <a href="{% url 'transactions:create' %}" class="btn btn-primary">
+            <a href="{% url 'transactions:create' %}" class="btn btn-dark">
                 <i class="bi bi-plus-lg me-2"></i>Add Transaction
             </a>
         </div>
     </div>
     
-    <!-- Filters -->
+    <!-- Search & Filters -->
     <div class="card mb-4">
         <div class="card-body">
             <form method="get" class="row g-3">
+                <!-- Search Bar -->
+                <div class="col-12 mb-2">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text" name="search" class="form-control border-start-0" 
+                               placeholder="Search transactions by description..." 
+                               value="{{ request.GET.search }}">
+                    </div>
+                </div>
+                
                 <div class="col-md-2">
-                    <label class="form-label">From Date</label>
+                    <label class="form-label small text-muted">From Date</label>
                     {{ filter_form.start_date }}
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">To Date</label>
+                    <label class="form-label small text-muted">To Date</label>
                     {{ filter_form.end_date }}
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Type</label>
+                    <label class="form-label small text-muted">Type</label>
                     {{ filter_form.transaction_type }}
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Account</label>
+                    <label class="form-label small text-muted">Account</label>
                     {{ filter_form.account }}
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Category</label>
+                    <label class="form-label small text-muted">Category</label>
                     {{ filter_form.category }}
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary me-2">
+                    <button type="submit" class="btn btn-dark me-2">
                         <i class="bi bi-funnel"></i> Filter
                     </button>
                     <a href="{% url 'transactions:list' %}" class="btn btn-outline-secondary">

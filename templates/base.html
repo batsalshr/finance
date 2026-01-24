@@ -26,15 +26,41 @@
             <!-- Top Navbar -->
             {% include 'components/navbar.html' %}
             
-            <!-- Messages -->
-            {% include 'components/messages.html' %}
-            
-            <!-- Page Content -->
+            <!-- Page Content (No inline messages here) -->
             <div class="content-wrapper">
                 {% block content %}{% endblock %}
             </div>
         </div>
     </div>
+    
+    <!-- Toast Container for notifications -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer" style="z-index: 1100;">
+        {% for message in messages %}
+        <div class="toast show auto-dismiss" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header {% if message.tags == 'success' %}text-success{% elif message.tags == 'error' or message.tags == 'danger' %}text-danger{% elif message.tags == 'warning' %}text-warning{% else %}text-info{% endif %}">
+                {% if message.tags == 'success' %}
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <strong class="me-auto">Success</strong>
+                {% elif message.tags == 'error' or message.tags == 'danger' %}
+                <i class="bi bi-x-circle-fill me-2"></i>
+                <strong class="me-auto">Error</strong>
+                {% elif message.tags == 'warning' %}
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong class="me-auto">Warning</strong>
+                {% else %}
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <strong class="me-auto">Info</strong>
+                {% endif %}
+                <small class="text-muted">Just now</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                {{ message }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
     {% else %}
     <!-- Auth Pages (Login/Register) -->
     <div class="auth-wrapper">
@@ -49,6 +75,136 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <!-- Custom JS -->
     <script src="{% static 'js/main.js' %}"></script>
+    
+    <script>
+    // Notification system
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-dismiss toasts after 4 seconds
+        const toasts = document.querySelectorAll('.toast.auto-dismiss');
+        toasts.forEach(function(toastEl) {
+            const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+            toast.show();
+            
+            // Remove from DOM after hidden
+            toastEl.addEventListener('hidden.bs.toast', function() {
+                toastEl.remove();
+            });
+        });
+        
+        updateNotificationBadge();
+    });
+    
+    function dismissNotification(btn) {
+        const item = btn.closest('.notification-item');
+        item.style.transition = 'opacity 0.2s, transform 0.2s';
+        item.style.opacity = '0';
+        item.style.transform = 'translateX(10px)';
+        setTimeout(() => {
+            item.remove();
+            updateNotificationBadge();
+            checkEmptyNotifications();
+        }, 200);
+    }
+    
+    function clearAllNotifications() {
+        const items = document.querySelectorAll('.notification-item');
+        items.forEach((item, index) => {
+            setTimeout(() => {
+                item.style.transition = 'opacity 0.2s, transform 0.2s';
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(10px)';
+                setTimeout(() => item.remove(), 200);
+            }, index * 50);
+        });
+        
+        setTimeout(() => {
+            updateNotificationBadge();
+            checkEmptyNotifications();
+        }, items.length * 50 + 250);
+    }
+    
+    function updateNotificationBadge() {
+        const badge = document.getElementById('notificationBadge');
+        const count = document.querySelectorAll('.notification-item').length;
+        
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        } else if (count > 0) {
+            // Create badge if it doesn't exist
+            const btn = document.getElementById('notificationDropdownBtn');
+            if (btn) {
+                const newBadge = document.createElement('span');
+                newBadge.id = 'notificationBadge';
+                newBadge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                newBadge.style.fontSize = '10px';
+                newBadge.textContent = count;
+                btn.appendChild(newBadge);
+            }
+        }
+    }
+    
+    function checkEmptyNotifications() {
+        const list = document.getElementById('notificationList');
+        if (!list) return;
+        
+        const items = list.querySelectorAll('.notification-item');
+        let emptyMsg = document.getElementById('noNotifications');
+        
+        if (items.length === 0 && !emptyMsg) {
+            list.innerHTML = `
+                <div class="text-center text-muted py-4" id="noNotifications">
+                    <i class="bi bi-bell-slash fs-4 mb-2 d-block opacity-50"></i>
+                    <span class="small">No new notifications</span>
+                </div>
+            `;
+        }
+    }
+    
+    // Add notification programmatically (can be used by JavaScript)
+    function showNotification(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const icons = {
+            success: 'check-circle-fill',
+            error: 'x-circle-fill',
+            danger: 'x-circle-fill',
+            warning: 'exclamation-triangle-fill',
+            info: 'info-circle-fill'
+        };
+        const titles = {
+            success: 'Success',
+            error: 'Error',
+            danger: 'Error',
+            warning: 'Warning',
+            info: 'Info'
+        };
+        
+        const toastHtml = `
+            <div class="toast show auto-dismiss" role="alert">
+                <div class="toast-header text-${type === 'error' ? 'danger' : type}">
+                    <i class="bi bi-${icons[type] || icons.info} me-2"></i>
+                    <strong class="me-auto">${titles[type] || 'Info'}</strong>
+                    <small class="text-muted">Just now</small>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">${message}</div>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', toastHtml);
+        const newToast = container.lastElementChild;
+        const toast = new bootstrap.Toast(newToast, { delay: 4000 });
+        toast.show();
+        
+        newToast.addEventListener('hidden.bs.toast', function() {
+            newToast.remove();
+        });
+    }
+    </script>
     
     {% block extra_js %}{% endblock %}
 </body>

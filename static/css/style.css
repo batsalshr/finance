@@ -163,6 +163,66 @@ body {
     z-index: 100;
 }
 
+.page-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--body-bg);
+    border: none;
+    color: var(--text-secondary);
+    position: relative;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    background: #e5e7eb;
+    color: var(--text-primary);
+}
+
+.notification-dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    background: #ef4444;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.profile-btn {
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+}
+
+.profile-btn:hover,
+.profile-btn:focus {
+    background: transparent !important;
+}
+
+.profile-avatar-sm {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+}
+
 .search-box .input-group {
     width: 300px;
 }
@@ -486,4 +546,57 @@ body {
 
 .pagination .page-link:focus {
     box-shadow: none;
+}
+
+/* =====================================================
+   Notification Styles
+   ===================================================== */
+
+.notification-dropdown {
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+    border: none !important;
+    border-radius: 12px !important;
+}
+
+.notification-item {
+    transition: background-color 0.2s, opacity 0.2s, transform 0.2s;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-badge {
+    font-size: 10px !important;
+    min-width: 16px;
+    height: 16px;
+    line-height: 16px;
+    padding: 0 4px;
+}
+
+/* =====================================================
+   Toast Notification Styles
+   ===================================================== */
+
+.toast {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+}
+
+.toast-header {
+    border-radius: 12px 12px 0 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    background: white;
+}
+
+.toast-body {
+    padding: 12px 16px;
+    background: white;
+    border-radius: 0 0 12px 12px;
+}
+
+.toast-container {
+    z-index: 1100 !important;
 }

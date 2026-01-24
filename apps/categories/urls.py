@@ -11,4 +11,5 @@ urlpatterns = [
     path('subcategory/create/', views.SubCategoryCreateView.as_view(), name='subcategory_create'),
     path('subcategory/<int:pk>/delete/', views.SubCategoryDeleteView.as_view(), name='subcategory_delete'),
     path('api/subcategories/<int:category_id>/', views.get_subcategories, name='get_subcategories'),
+    path('api/search/', views.search_categories, name='search_categories'),
 ]
