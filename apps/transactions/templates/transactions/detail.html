@@ -4,84 +4,476 @@
 {% block title %}Transaction Details - Finance Tracker{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <div class="d-flex align-items-center mb-4">
-                <a href="{% url 'transactions:list' %}" class="btn btn-link text-muted me-2">
-                    <i class="bi bi-arrow-left"></i>
-                </a>
-                <h4 class="mb-0">Transaction Details</h4>
+<div class="detail-container">
+    <!-- Back & Title -->
+    <div class="detail-header">
+        <a href="{% url 'transactions:list' %}" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h5>Transaction Details</h5>
+        <div class="header-actions">
+            <a href="{% url 'transactions:edit' transaction.pk %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-pencil"></i>
+            </a>
+            <a href="{% url 'transactions:delete' transaction.pk %}" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-trash"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="detail-grid">
+        <!-- Main Info Card -->
+        <div class="detail-card main-card">
+            <!-- Amount Display -->
+            <div class="amount-display {% if transaction.is_credit %}credit{% else %}debit{% endif %}">
+                <span class="amount-label">{{ transaction.date|date:"d M Y" }}</span>
+                <span class="amount-value">
+                    {% if transaction.is_credit %}+{% else %}-{% endif %}{{ currency_symbol }}{{ transaction.amount|floatformat:0|intcomma }}
+                </span>
+                <span class="amount-type">{{ transaction.get_transaction_type_display }}</span>
             </div>
-            
-            <div class="card">
-                <div class="card-body">
-                    <div class="text-center py-3 mb-4 border-bottom">
-                        <p class="text-muted mb-1">{{ transaction.date|date:"F d, Y" }}</p>
-                        <h2 class="{% if transaction.is_credit %}text-success{% else %}text-danger{% endif %} mb-0">
-                            {% if transaction.is_credit %}+{% else %}-{% endif %}{{ currency_symbol }}{{ transaction.amount|floatformat:2|intcomma }}
-                        </h2>
-                        <span class="badge {% if transaction.is_credit %}bg-success{% else %}bg-danger{% endif %} mt-2">
-                            {{ transaction.get_transaction_type_display }}
+
+            <!-- Details -->
+            <div class="detail-rows">
+                <div class="detail-row">
+                    <span class="detail-label">Description</span>
+                    <span class="detail-value">{{ transaction.description }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Account</span>
+                    <span class="detail-value">
+                        <span class="account-badge" style="background: {{ transaction.account.color }}15; color: {{ transaction.account.color }};">
+                            <i class="{{ transaction.account.icon }}"></i>
+                            {{ transaction.account.name }}
                         </span>
-                    </div>
-                    
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <p class="text-muted small mb-1">Description</p>
-                            <p class="fw-medium mb-0">{{ transaction.description }}</p>
-                        </div>
-                        <div class="col-6">
-                            <p class="text-muted small mb-1">Account</p>
-                            <p class="fw-medium mb-0">
-                                <i class="{{ transaction.account.icon }} me-1" style="color: {{ transaction.account.color }}"></i>
-                                {{ transaction.account.name }}
-                            </p>
-                        </div>
-                        <div class="col-6">
-                            <p class="text-muted small mb-1">Category</p>
-                            <p class="mb-0">
-                                {% if transaction.category %}
-                                <span class="badge" style="background-color: {{ transaction.category.color }}">
-                                    <i class="{{ transaction.category.icon }} me-1"></i>
-                                    {{ transaction.category.name }}
-                                </span>
-                                {% else %}
-                                <span class="text-muted">Not categorized</span>
-                                {% endif %}
-                            </p>
-                        </div>
-                        <div class="col-6">
-                            <p class="text-muted small mb-1">Subcategory</p>
-                            <p class="fw-medium mb-0">
-                                {% if transaction.subcategory %}
-                                {{ transaction.subcategory.name }}
-                                {% else %}
-                                <span class="text-muted">-</span>
-                                {% endif %}
-                            </p>
-                        </div>
-                        {% if transaction.notes %}
-                        <div class="col-12">
-                            <p class="text-muted small mb-1">Notes</p>
-                            <p class="mb-0">{{ transaction.notes }}</p>
-                        </div>
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Category</span>
+                    <span class="detail-value">
+                        {% if transaction.category %}
+                        <span class="category-badge" style="background: {{ transaction.category.color }}; color: white;">
+                            <i class="{{ transaction.category.icon }}"></i>
+                            {{ transaction.category.name }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">Not categorized</span>
                         {% endif %}
-                    </div>
-                    
-                    <hr class="my-4">
-                    
-                    <div class="d-flex justify-content-between">
-                        <a href="{% url 'transactions:delete' transaction.pk %}" class="btn btn-outline-danger">
-                            <i class="bi bi-trash me-2"></i>Delete
-                        </a>
-                        <a href="{% url 'transactions:edit' transaction.pk %}" class="btn btn-primary">
-                            <i class="bi bi-pencil me-2"></i>Edit Transaction
-                        </a>
-                    </div>
+                    </span>
+                </div>
+                {% if transaction.subcategory %}
+                <div class="detail-row">
+                    <span class="detail-label">Subcategory</span>
+                    <span class="detail-value">{{ transaction.subcategory.name }}</span>
+                </div>
+                {% endif %}
+                {% if transaction.notes %}
+                <div class="detail-row notes">
+                    <span class="detail-label">Notes</span>
+                    <span class="detail-value">{{ transaction.notes }}</span>
+                </div>
+                {% endif %}
+                <div class="detail-row">
+                    <span class="detail-label">Created</span>
+                    <span class="detail-value text-muted">{{ transaction.created_at|date:"d M Y, H:i" }}</span>
                 </div>
             </div>
         </div>
+
+        <!-- Receipts Card -->
+        <div class="detail-card receipts-card">
+            <div class="card-header">
+                <h6><i class="bi bi-image me-2"></i>Receipts</h6>
+                <span class="receipt-count">{{ receipts.count }}</span>
+            </div>
+
+            <!-- Upload Form -->
+            <form method="post" action="{% url 'transactions:receipt_upload' transaction.pk %}" enctype="multipart/form-data" class="upload-form">
+                {% csrf_token %}
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" name="images" id="imageInput" accept="image/*" multiple hidden>
+                    <div class="upload-content" onclick="document.getElementById('imageInput').click()">
+                        <i class="bi bi-cloud-upload"></i>
+                        <span>Click or drag images here</span>
+                        <small>Images will be compressed automatically</small>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-dark btn-sm upload-btn" id="uploadBtn" style="display: none;">
+                    <i class="bi bi-upload me-2"></i>Upload
+                </button>
+            </form>
+
+            <!-- Receipts Grid -->
+            {% if receipts %}
+            <div class="receipts-grid">
+                {% for receipt in receipts %}
+                <div class="receipt-item">
+                    <a href="{{ receipt.image.url }}" target="_blank" class="receipt-image">
+                        <img src="{{ receipt.image.url }}" alt="Receipt">
+                    </a>
+                    <div class="receipt-info">
+                        <span class="receipt-size">{{ receipt.file_size_display }}</span>
+                        <form method="post" action="{% url 'transactions:receipt_delete' receipt.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-delete" onclick="return confirm('Delete this receipt?')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="no-receipts">
+                <i class="bi bi-receipt"></i>
+                <p>No receipts attached</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
+
+<style>
+.detail-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.detail-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.detail-header h5 {
+    flex: 1;
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3f4f6;
+    color: #6b7280;
+    text-decoration: none;
+}
+
+.back-btn:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.detail-card {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+}
+
+/* Main Card */
+.main-card {
+    padding: 0;
+}
+
+.amount-display {
+    padding: 32px 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.amount-display.credit {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+}
+
+.amount-display.debit {
+    background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+}
+
+.amount-label {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.amount-value {
+    font-size: 36px;
+    font-weight: 700;
+}
+
+.amount-display.credit .amount-value { color: #059669; }
+.amount-display.debit .amount-value { color: #dc2626; }
+
+.amount-type {
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.amount-display.credit .amount-type { color: #10b981; }
+.amount-display.debit .amount-type { color: #ef4444; }
+
+.detail-rows {
+    padding: 20px 24px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row.notes {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.detail-label {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.detail-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+}
+
+.account-badge, .category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+/* Receipts Card */
+.receipts-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.card-header h6 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.receipt-count {
+    background: #f3f4f6;
+    color: #6b7280;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.upload-form {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.upload-area {
+    border: 2px dashed #e5e7eb;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.upload-area:hover, .upload-area.dragover {
+    border-color: #6366f1;
+    background: #f5f3ff;
+}
+
+.upload-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: #6b7280;
+}
+
+.upload-content i {
+    font-size: 32px;
+    color: #9ca3af;
+}
+
+.upload-content small {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+.upload-btn {
+    width: 100%;
+    margin-top: 12px;
+}
+
+.receipts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 16px 20px;
+    flex: 1;
+}
+
+.receipt-item {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+}
+
+.receipt-image {
+    display: block;
+    aspect-ratio: 1;
+    overflow: hidden;
+}
+
+.receipt-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s;
+}
+
+.receipt-image:hover img {
+    transform: scale(1.05);
+}
+
+.receipt-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: #f9fafb;
+}
+
+.receipt-size {
+    font-size: 11px;
+    color: #6b7280;
+}
+
+.btn-delete {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.btn-delete:hover {
+    color: #dc2626;
+}
+
+.no-receipts {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #9ca3af;
+}
+
+.no-receipts i {
+    font-size: 40px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.no-receipts p {
+    margin: 0;
+    font-size: 13px;
+}
+
+@media (max-width: 768px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .amount-value {
+        font-size: 28px;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('uploadArea');
+    const imageInput = document.getElementById('imageInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    
+    // Show upload button when files selected
+    imageInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            uploadBtn.style.display = 'block';
+            uploadArea.querySelector('.upload-content span').textContent = 
+                this.files.length + ' file(s) selected';
+        }
+    });
+    
+    // Drag and drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, () => uploadArea.classList.add('dragover'), false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, () => uploadArea.classList.remove('dragover'), false);
+    });
+    
+    uploadArea.addEventListener('drop', function(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        imageInput.files = files;
+        imageInput.dispatchEvent(new Event('change'));
+    });
+});
+</script>
 {% endblock %}

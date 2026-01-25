@@ -29,9 +29,15 @@
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link {% if 'transactions' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'transactions:list' %}">
+            <a class="nav-link {% if 'transactions' in request.resolver_match.namespace and 'template' not in request.resolver_match.url_name and 'quick' not in request.resolver_match.url_name %}active{% endif %}" href="{% url 'transactions:list' %}">
                 <i class="bi bi-receipt"></i>
                 <span>Transactions</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if 'template' in request.resolver_match.url_name or 'quick' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'transactions:template_list' %}">
+                <i class="bi bi-lightning"></i>
+                <span>Quick Add</span>
             </a>
         </li>
         <li class="nav-item">

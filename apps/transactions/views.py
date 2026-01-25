@@ -1,15 +1,17 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView
-from django.urls import reverse_lazy
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, View
+from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from django.db.models import Q
+from django.utils import timezone
+from django.http import JsonResponse
 import csv
 from io import TextIOWrapper
 from datetime import datetime
 
-from .models import Transaction
-from .forms import TransactionForm, BulkTransactionForm, TransactionFilterForm
+from .models import Transaction, TransactionTemplate, TransactionReceipt
+from .forms import TransactionForm, BulkTransactionForm, TransactionFilterForm, TransactionTemplateForm, QuickTransactionForm, ReceiptUploadForm
 from apps.wallets.models import Account
 from apps.categories.models import Category
 
@@ -70,13 +72,64 @@ class TransactionDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'transaction'
     
     def get_queryset(self):
-        return Transaction.objects.filter(user=self.request.user)
+        return Transaction.objects.filter(user=self.request.user).prefetch_related('receipts')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['currency_symbol'] = self.request.user.profile.currency_symbol
         context['page_title'] = 'Transaction Details'
+        context['receipts'] = self.object.receipts.all()
+        context['upload_form'] = ReceiptUploadForm()
         return context
+
+
+class ReceiptUploadView(LoginRequiredMixin, View):
+    """Handle receipt image uploads"""
+    
+    def post(self, request, transaction_id):
+        transaction = get_object_or_404(Transaction, pk=transaction_id, user=request.user)
+        
+        files = request.FILES.getlist('images')
+        
+        if not files:
+            messages.error(request, 'No images selected')
+            return redirect('transactions:detail', pk=transaction_id)
+        
+        uploaded_count = 0
+        for f in files:
+            # Validate file type
+            if not f.content_type.startswith('image/'):
+                messages.warning(request, f'Skipped {f.name} - not an image')
+                continue
+            
+            # Create receipt
+            receipt = TransactionReceipt(
+                transaction=transaction,
+                image=f
+            )
+            receipt.save()
+            uploaded_count += 1
+        
+        if uploaded_count > 0:
+            messages.success(request, f'Uploaded {uploaded_count} receipt(s)')
+        
+        return redirect('transactions:detail', pk=transaction_id)
+
+
+class ReceiptDeleteView(LoginRequiredMixin, View):
+    """Delete a receipt image"""
+    
+    def post(self, request, pk):
+        receipt = get_object_or_404(TransactionReceipt, pk=pk, transaction__user=request.user)
+        transaction_id = receipt.transaction_id
+        
+        # Delete the file
+        if receipt.image:
+            receipt.image.delete(save=False)
+        receipt.delete()
+        
+        messages.success(request, 'Receipt deleted')
+        return redirect('transactions:detail', pk=transaction_id)
 
 
 class TransactionCreateView(LoginRequiredMixin, CreateView):
@@ -93,8 +146,24 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
     
     def form_valid(self, form):
         form.instance.user = self.request.user
-        messages.success(self.request, 'Transaction added successfully!')
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        
+        # Handle receipt uploads
+        files = self.request.FILES.getlist('receipts')
+        for f in files:
+            if f.content_type.startswith('image/'):
+                TransactionReceipt.objects.create(
+                    transaction=self.object,
+                    image=f
+                )
+        
+        receipt_count = len(files)
+        if receipt_count > 0:
+            messages.success(self.request, f'Transaction added with {receipt_count} receipt(s)!')
+        else:
+            messages.success(self.request, 'Transaction added successfully!')
+        
+        return response
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -120,14 +189,31 @@ class TransactionUpdateView(LoginRequiredMixin, UpdateView):
         return kwargs
     
     def form_valid(self, form):
-        messages.success(self.request, 'Transaction updated successfully!')
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        
+        # Handle receipt uploads
+        files = self.request.FILES.getlist('receipts')
+        for f in files:
+            if f.content_type.startswith('image/'):
+                TransactionReceipt.objects.create(
+                    transaction=self.object,
+                    image=f
+                )
+        
+        receipt_count = len(files)
+        if receipt_count > 0:
+            messages.success(self.request, f'Transaction updated with {receipt_count} new receipt(s)!')
+        else:
+            messages.success(self.request, 'Transaction updated successfully!')
+        
+        return response
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Edit Transaction'
         context['button_text'] = 'Update Transaction'
         context['page_title'] = 'Edit Transaction'
+        context['existing_receipts'] = self.object.receipts.all()
         return context
 
 
@@ -223,3 +309,136 @@ class BulkImportView(LoginRequiredMixin, FormView):
         context['sample_csv'] = "date,description,amount,type,account,category,notes\n2024-01-15,Grocery Shopping,3000,debit,Cash,Food,Weekly groceries"
         context['page_title'] = 'Import Transactions'
         return context
+
+
+# ============ Transaction Templates ============
+
+class TemplateListView(LoginRequiredMixin, ListView):
+    """List all transaction templates"""
+    model = TransactionTemplate
+    template_name = 'transactions/templates/list.html'
+    context_object_name = 'templates'
+    
+    def get_queryset(self):
+        return TransactionTemplate.objects.filter(user=self.request.user, is_active=True)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Quick Add'
+        context['currency_symbol'] = self.request.user.profile.currency_symbol
+        return context
+
+
+class TemplateCreateView(LoginRequiredMixin, CreateView):
+    """Create new transaction template"""
+    model = TransactionTemplate
+    form_class = TransactionTemplateForm
+    template_name = 'transactions/templates/form.html'
+    success_url = reverse_lazy('transactions:template_list')
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+    
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        messages.success(self.request, f'Template "{form.instance.name}" created!')
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Create Template'
+        context['button_text'] = 'Create Template'
+        context['page_title'] = 'New Template'
+        return context
+
+
+class TemplateUpdateView(LoginRequiredMixin, UpdateView):
+    """Update transaction template"""
+    model = TransactionTemplate
+    form_class = TransactionTemplateForm
+    template_name = 'transactions/templates/form.html'
+    success_url = reverse_lazy('transactions:template_list')
+    
+    def get_queryset(self):
+        return TransactionTemplate.objects.filter(user=self.request.user)
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+    
+    def form_valid(self, form):
+        messages.success(self.request, f'Template "{form.instance.name}" updated!')
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Edit Template'
+        context['button_text'] = 'Update Template'
+        context['page_title'] = 'Edit Template'
+        return context
+
+
+class TemplateDeleteView(LoginRequiredMixin, DeleteView):
+    """Delete transaction template"""
+    model = TransactionTemplate
+    template_name = 'transactions/templates/confirm_delete.html'
+    success_url = reverse_lazy('transactions:template_list')
+    
+    def get_queryset(self):
+        return TransactionTemplate.objects.filter(user=self.request.user)
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Template deleted!')
+        return super().form_valid(form)
+
+
+class QuickAddView(LoginRequiredMixin, View):
+    """Quick add transaction from template"""
+    template_name = 'transactions/templates/quick_add.html'
+    
+    def get(self, request, pk):
+        template = get_object_or_404(TransactionTemplate, pk=pk, user=request.user)
+        form = QuickTransactionForm(initial={
+            'amount': template.default_amount,
+            'date': timezone.now().date()
+        })
+        return render(request, self.template_name, {
+            'template': template,
+            'form': form,
+            'page_title': f'Add {template.name}',
+            'currency_symbol': request.user.profile.currency_symbol
+        })
+    
+    def post(self, request, pk):
+        template = get_object_or_404(TransactionTemplate, pk=pk, user=request.user)
+        form = QuickTransactionForm(request.POST)
+        
+        if form.is_valid():
+            # Create transaction from template
+            Transaction.objects.create(
+                user=request.user,
+                account=template.account,
+                category=template.category,
+                subcategory=template.subcategory,
+                date=form.cleaned_data['date'],
+                description=template.description,
+                amount=form.cleaned_data['amount'],
+                transaction_type=template.transaction_type,
+                notes=form.cleaned_data.get('notes', '')
+            )
+            
+            # Increment use count
+            template.increment_use_count()
+            
+            messages.success(request, f'Added {template.name}: {request.user.profile.currency_symbol}{form.cleaned_data["amount"]}')
+            return redirect('transactions:template_list')
+        
+        return render(request, self.template_name, {
+            'template': template,
+            'form': form,
+            'page_title': f'Add {template.name}',
+            'currency_symbol': request.user.profile.currency_symbol
+        })

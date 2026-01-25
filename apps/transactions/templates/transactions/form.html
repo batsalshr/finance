@@ -3,190 +3,217 @@
 {% block title %}{{ title }} - Finance Tracker{% endblock %}
 
 {% block content %}
-<div class="form-page-container">
-    <div class="form-page-header">
-        <a href="{% url 'transactions:list' %}" class="back-btn">
-            <i class="bi bi-arrow-left"></i>
-        </a>
-        <div>
-            <h4 class="form-page-title">{{ title }}</h4>
-            <p class="form-page-subtitle">{% if object %}Update transaction details{% else %}Record a new transaction{% endif %}</p>
-        </div>
-    </div>
-    
-    <div class="form-card">
-        <form method="post" id="transactionForm">
-            {% csrf_token %}
-            
-            <!-- Transaction Type Toggle -->
+<div class="txn-form-container">
+    <form method="post" id="transactionForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Header with Type Toggle -->
+        <div class="txn-form-header">
+            <a href="{% url 'transactions:list' %}" class="back-btn">
+                <i class="bi bi-x-lg"></i>
+            </a>
             <div class="type-toggle">
                 <label class="type-option">
                     <input type="radio" name="transaction_type" value="debit" {% if form.transaction_type.value == 'debit' or not form.transaction_type.value %}checked{% endif %}>
-                    <span class="type-btn expense">
-                        <i class="bi bi-arrow-up-right"></i>
-                        Expense
-                    </span>
+                    <span class="type-btn">Expense</span>
                 </label>
                 <label class="type-option">
                     <input type="radio" name="transaction_type" value="credit" {% if form.transaction_type.value == 'credit' %}checked{% endif %}>
-                    <span class="type-btn income">
-                        <i class="bi bi-arrow-down-left"></i>
-                        Income
-                    </span>
+                    <span class="type-btn">Income</span>
                 </label>
+                <div class="type-slider"></div>
             </div>
-            
-            <div class="form-section">
-                <div class="form-group">
-                    <label for="id_amount">Amount</label>
-                    <div class="amount-input">
-                        <span class="currency-symbol">रू</span>
-                        {{ form.amount }}
+            <button type="submit" class="save-btn">
+                <i class="bi bi-check-lg"></i>
+            </button>
+        </div>
+
+        <!-- Amount Input - Big & Central -->
+        <div class="amount-section">
+            <span class="currency">रू</span>
+            <input type="number" 
+                   name="amount" 
+                   class="amount-input" 
+                   placeholder="0"
+                   step="0.01"
+                   min="0"
+                   value="{{ form.amount.value|default:'' }}"
+                   required
+                   autofocus>
+        </div>
+
+        <!-- Main Fields Grid -->
+        <div class="fields-grid">
+            <!-- Description -->
+            <div class="field-item full-width">
+                <i class="bi bi-pencil"></i>
+                <input type="text" name="description" placeholder="What was this for?" 
+                       value="{{ form.description.value|default:'' }}" required>
+            </div>
+
+            <!-- Date -->
+            <div class="field-item">
+                <i class="bi bi-calendar3"></i>
+                <input type="date" name="date" value="{{ form.date.value|default_if_none:'' }}">
+            </div>
+
+            <!-- Account -->
+            <div class="field-item">
+                <i class="bi bi-wallet2"></i>
+                <select name="account" required>
+                    <option value="">Account</option>
+                    {% for choice in form.account.field.queryset %}
+                    <option value="{{ choice.id }}" {% if form.account.value|stringformat:"s" == choice.id|stringformat:"s" %}selected{% endif %}>
+                        {{ choice.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Category -->
+            <div class="field-item">
+                <i class="bi bi-tag"></i>
+                <select name="category" id="categorySelect">
+                    <option value="">Category</option>
+                    {% for choice in form.category.field.queryset %}
+                    <option value="{{ choice.id }}" 
+                            data-color="{{ choice.color }}"
+                            {% if form.category.value|stringformat:"s" == choice.id|stringformat:"s" %}selected{% endif %}>
+                        {{ choice.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Subcategory -->
+            <div class="field-item">
+                <i class="bi bi-tags"></i>
+                <select name="subcategory" id="id_subcategory">
+                    <option value="">Subcategory</option>
+                    {% for choice in form.subcategory.field.queryset %}
+                    <option value="{{ choice.id }}" {% if form.subcategory.value|stringformat:"s" == choice.id|stringformat:"s" %}selected{% endif %}>
+                        {{ choice.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Notes (collapsible) -->
+        <div class="extras-section">
+            <div class="extra-toggle" onclick="toggleNotes()">
+                <i class="bi bi-sticky"></i>
+                <span>Add note</span>
+                <i class="bi bi-chevron-down toggle-icon" id="notesToggleIcon"></i>
+            </div>
+            <div class="extra-content" id="notesContent">
+                <textarea name="notes" placeholder="Additional notes...">{{ form.notes.value|default:'' }}</textarea>
+            </div>
+        </div>
+
+        <!-- Receipt Upload -->
+        <div class="extras-section">
+            <div class="extra-toggle" onclick="toggleReceipts()">
+                <i class="bi bi-camera"></i>
+                <span>Add receipt</span>
+                <span class="receipt-count" id="receiptCount"></span>
+                <i class="bi bi-chevron-down toggle-icon" id="receiptsToggleIcon"></i>
+            </div>
+            <div class="extra-content" id="receiptsContent">
+                {% if existing_receipts %}
+                <div class="existing-receipts-row">
+                    {% for receipt in existing_receipts %}
+                    <div class="mini-receipt">
+                        <img src="{{ receipt.image.url }}" alt="Receipt">
+                        <form method="post" action="{% url 'transactions:receipt_delete' receipt.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="mini-delete" onclick="return confirm('Delete?')">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </form>
                     </div>
-                    {% if form.amount.errors %}
-                    <span class="form-error">{{ form.amount.errors.0 }}</span>
-                    {% endif %}
+                    {% endfor %}
                 </div>
-                
-                <div class="form-group">
-                    <label for="id_description">Description</label>
-                    {{ form.description }}
-                    {% if form.description.errors %}
-                    <span class="form-error">{{ form.description.errors.0 }}</span>
-                    {% endif %}
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="id_date">Date</label>
-                        {{ form.date }}
+                {% endif %}
+                <div class="upload-row">
+                    <input type="file" name="receipts" id="receiptInput" accept="image/*" multiple hidden>
+                    <div class="upload-btn" onclick="document.getElementById('receiptInput').click()">
+                        <i class="bi bi-plus"></i>
+                        <span>Add photos</span>
                     </div>
-                    <div class="form-group">
-                        <label for="id_account">Account</label>
-                        {{ form.account }}
-                    </div>
+                    <div class="preview-row" id="previewRow"></div>
                 </div>
             </div>
-            
-            <div class="form-section">
-                <h6 class="form-section-title">Category</h6>
-                
-                <div class="form-group">
-                    <div class="category-autocomplete">
-                        <input type="text" 
-                               class="form-control" 
-                               id="categorySearch" 
-                               placeholder="Search categories..."
-                               autocomplete="off">
-                        <input type="hidden" name="category" id="id_category" value="{{ form.category.value|default:'' }}">
-                        <div class="category-suggestions" id="categorySuggestions"></div>
-                    </div>
-                    <div id="selectedCategoryDisplay" class="selected-category-display" style="display: none;">
-                        <span class="category-icon-preview" id="selectedCategoryIcon"></span>
-                        <span id="selectedCategoryName"></span>
-                        <span class="remove-btn" onclick="clearCategory()"><i class="bi bi-x-lg"></i></span>
-                    </div>
-                    <!-- Dropdown for existing categories -->
-                    <select class="form-select mt-2" id="categoryDropdown">
-                        <option value="">Select from list...</option>
-                        {% for choice in form.category.field.queryset %}
-                        <option value="{{ choice.id }}" 
-                                data-color="{{ choice.color }}" 
-                                data-icon="{{ choice.icon }}"
-                                {% if form.category.value|stringformat:"s" == choice.id|stringformat:"s" %}selected{% endif %}>
-                            {{ choice.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="id_subcategory">Subcategory <span class="optional">(Optional)</span></label>
-                    {{ form.subcategory }}
-                </div>
-            </div>
-            
-            <div class="form-section">
-                <div class="form-group">
-                    <label for="id_notes">Notes <span class="optional">(Optional)</span></label>
-                    {{ form.notes }}
-                </div>
-            </div>
-            
-            <div class="form-actions">
-                <a href="{% url 'transactions:list' %}" class="btn btn-outline-secondary">Cancel</a>
-                <button type="submit" class="btn btn-dark">
-                    <i class="bi bi-check-lg me-2"></i>{{ button_text }}
-                </button>
-            </div>
-        </form>
-    </div>
+        </div>
+
+    </form>
 </div>
-{% endblock %}
 
-{% block extra_css %}
 <style>
-.form-page-container {
-    max-width: 560px;
+.txn-form-container {
+    max-width: 480px;
     margin: 0 auto;
+    padding: 24px;
+    background: #f8f9fa;
+    border-radius: 20px;
+    border: 1px solid #e9ecef;
 }
 
-.form-page-header {
+/* Header */
+.txn-form-header {
     display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 24px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 20px 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #e9ecef;
 }
 
-.back-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: white;
-    border: 1px solid #e5e7eb;
+.back-btn, .save-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #6b7280;
-    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
     transition: all 0.2s;
 }
 
-.back-btn:hover {
+.back-btn {
     background: #f3f4f6;
-    color: #111827;
-}
-
-.form-page-title {
-    font-weight: 600;
-    color: #111827;
-    margin: 0;
-}
-
-.form-page-subtitle {
     color: #6b7280;
-    margin: 4px 0 0 0;
-    font-size: 14px;
+    text-decoration: none;
 }
 
-/* Form Card */
-.form-card {
-    background: white;
-    border-radius: 16px;
-    padding: 24px;
-    border: 1px solid #f3f4f6;
+.back-btn:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.save-btn {
+    background: #111827;
+    color: white;
+}
+
+.save-btn:hover {
+    background: #1f2937;
 }
 
 /* Type Toggle */
 .type-toggle {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 24px;
+    display: flex;
+    background: #f3f4f6;
+    border-radius: 10px;
+    padding: 4px;
+    position: relative;
 }
 
 .type-option {
     cursor: pointer;
+    z-index: 1;
 }
 
 .type-option input {
@@ -194,430 +221,467 @@
 }
 
 .type-btn {
+    display: block;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7280;
+    border-radius: 8px;
+    transition: color 0.2s;
+}
+
+.type-option input:checked + .type-btn {
+    color: #111827;
+}
+
+.type-slider {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    height: calc(100% - 8px);
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+/* Amount Section */
+.amount-section {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 14px;
-    border-radius: 12px;
-    font-weight: 500;
-    border: 2px solid #e5e7eb;
-    transition: all 0.2s;
+    padding: 32px 0;
+    background: white;
+    border-radius: 16px;
+    margin-bottom: 20px;
+    border: 1px solid #e9ecef;
 }
 
-.type-btn.expense {
-    color: #6b7280;
-}
-
-.type-btn.income {
-    color: #6b7280;
-}
-
-.type-option input:checked + .type-btn.expense {
-    background: #fef2f2;
-    border-color: #f43f5e;
-    color: #f43f5e;
-}
-
-.type-option input:checked + .type-btn.income {
-    background: #ecfdf5;
-    border-color: #10b981;
-    color: #10b981;
-}
-
-/* Form Sections */
-.form-section {
-    margin-bottom: 24px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid #f3f4f6;
-}
-
-.form-section:last-of-type {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
-}
-
-.form-section-title {
+.currency {
+    font-size: 32px;
     font-weight: 600;
-    color: #111827;
-    margin: 0 0 16px 0;
-    font-size: 14px;
+    color: #9ca3af;
 }
 
-/* Form Groups */
-.form-group {
+.amount-input {
+    font-size: 48px;
+    font-weight: 700;
+    color: #111827;
+    border: none;
+    background: transparent;
+    width: 200px;
+    text-align: left;
+    outline: none;
+}
+
+.amount-input::placeholder {
+    color: #d1d5db;
+}
+
+.amount-input::-webkit-outer-spin-button,
+.amount-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+
+/* Fields Grid */
+.fields-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
     margin-bottom: 16px;
 }
 
-.form-group:last-child {
-    margin-bottom: 0;
-}
-
-.form-group label {
-    display: block;
-    font-size: 13px;
-    font-weight: 500;
-    color: #374151;
-    margin-bottom: 6px;
-}
-
-.form-group label .optional {
-    color: #9ca3af;
-    font-weight: 400;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-    width: 100%;
-    padding: 10px 14px;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    font-size: 14px;
+.field-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
     transition: all 0.2s;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-    outline: none;
-    border-color: #111827;
-    box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1);
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-}
-
-/* Amount Input */
-.amount-input {
-    position: relative;
-}
-
-.amount-input .currency-symbol {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #6b7280;
-    font-weight: 500;
-}
-
-.amount-input input {
-    padding-left: 36px;
-    font-size: 18px;
-    font-weight: 600;
-}
-
-.form-error {
-    color: #dc2626;
-    font-size: 12px;
-    margin-top: 4px;
-    display: block;
-}
-
-/* Category Autocomplete */
-.category-autocomplete {
-    position: relative;
-}
-
-.category-suggestions {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
+.field-item:focus-within {
     background: white;
-    border: 1px solid #e5e7eb;
-    border-top: none;
-    border-radius: 0 0 10px 10px;
-    max-height: 250px;
-    overflow-y: auto;
-    z-index: 1000;
-    display: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #e5e7eb;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
-.category-suggestions.show {
-    display: block;
+.field-item.full-width {
+    grid-column: 1 / -1;
 }
 
-.category-suggestion {
-    padding: 10px 14px;
+.field-item i {
+    color: #9ca3af;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.field-item input,
+.field-item select {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    color: #111827;
+    outline: none;
+    min-width: 0;
+}
+
+.field-item select {
     cursor: pointer;
+}
+
+.field-item input::placeholder {
+    color: #9ca3af;
+}
+
+/* Extras Section */
+.extras-section {
+    background: white;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+}
+
+.extra-toggle {
     display: flex;
     align-items: center;
     gap: 10px;
-    border-bottom: 1px solid #f3f4f6;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
-.category-suggestion:last-child {
-    border-bottom: none;
+.extra-toggle:hover {
+    background: #f8f9fa;
 }
 
-.category-suggestion:hover {
-    background-color: #f9fafb;
+.extra-toggle i:first-child {
+    color: #9ca3af;
 }
 
-.category-suggestion.selected {
-    background-color: #f3f4f6;
+.extra-toggle span {
+    flex: 1;
+    font-size: 14px;
+    color: #6b7280;
 }
 
-.category-icon-preview {
-    width: 32px;
-    height: 32px;
+.toggle-icon {
+    color: #9ca3af;
+    transition: transform 0.2s;
+}
+
+.toggle-icon.rotated {
+    transform: rotate(180deg);
+}
+
+.receipt-count {
+    background: #10b981;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+}
+
+.extra-content {
+    display: none;
+    padding: 0 16px 16px;
+}
+
+.extra-content.show {
+    display: block;
+}
+
+.extra-content textarea {
+    width: 100%;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 14px;
+    resize: none;
+    height: 80px;
+    outline: none;
+}
+
+.extra-content textarea:focus {
+    border-color: #6366f1;
+}
+
+/* Receipt Upload */
+.existing-receipts-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.mini-receipt {
+    width: 60px;
+    height: 60px;
     border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.mini-receipt img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mini-delete {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 10px;
 }
 
-.category-suggestion-info {
-    flex: 1;
-}
-
-.category-suggestion-name {
-    font-weight: 500;
-    color: #111827;
-}
-
-.category-suggestion-type {
-    font-size: 12px;
-    color: #9ca3af;
-}
-
-.selected-category-display {
+.upload-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    background: #f3f4f6;
-    border-radius: 10px;
-    margin-top: 8px;
-}
-
-.selected-category-display .remove-btn {
-    margin-left: auto;
-    cursor: pointer;
-    color: #9ca3af;
-    transition: color 0.2s;
-}
-
-.selected-category-display .remove-btn:hover {
-    color: #dc2626;
-}
-
-/* Form Actions */
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
     gap: 12px;
-    margin-top: 24px;
-    padding-top: 24px;
-    border-top: 1px solid #f3f4f6;
+    flex-wrap: wrap;
+}
+
+.upload-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: white;
+    border: 1px dashed #d1d5db;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #6b7280;
+    transition: all 0.2s;
+}
+
+.upload-btn:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+}
+
+.preview-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.preview-item {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-item button {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 10px;
 }
 
 /* Responsive */
-@media (max-width: 640px) {
-    .form-row {
+@media (max-width: 480px) {
+    .txn-form-container {
+        padding: 0 16px;
+    }
+    
+    .amount-input {
+        font-size: 36px;
+        width: 150px;
+    }
+    
+    .currency {
+        font-size: 24px;
+    }
+    
+    .fields-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .type-btn {
+        padding: 8px 14px;
+        font-size: 13px;
     }
 }
 </style>
-{% endblock %}
 
-{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const categorySearch = document.getElementById('categorySearch');
-    const categoryInput = document.getElementById('id_category');
-    const suggestions = document.getElementById('categorySuggestions');
-    const selectedDisplay = document.getElementById('selectedCategoryDisplay');
-    const selectedIcon = document.getElementById('selectedCategoryIcon');
-    const selectedName = document.getElementById('selectedCategoryName');
-    const categoryDropdown = document.getElementById('categoryDropdown');
-    const subcategorySelect = document.getElementById('id_subcategory');
-    const typeInputs = document.querySelectorAll('input[name="transaction_type"]');
-    
-    let selectedIndex = -1;
-    let currentSuggestions = [];
-    
-    // Initialize if editing existing transaction
-    if (categoryInput.value) {
-        const selectedOption = categoryDropdown.querySelector(`option[value="${categoryInput.value}"]`);
-        if (selectedOption) {
-            showSelectedCategory(
-                categoryInput.value,
-                selectedOption.textContent.trim(),
-                selectedOption.dataset.color,
-                selectedOption.dataset.icon
-            );
-        }
+    // Set default date to today if empty
+    const dateInput = document.querySelector('input[name="date"]');
+    if (!dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
     }
     
-    // Get current transaction type
-    function getTransactionType() {
-        const checked = document.querySelector('input[name="transaction_type"]:checked');
-        return checked ? (checked.value === 'credit' ? 'income' : 'expense') : 'expense';
-    }
-    
-    // Search input handler
-    categorySearch.addEventListener('input', function() {
-        const query = this.value.trim();
-        if (query.length < 1) {
-            hideSuggestions();
-            return;
-        }
-        
-        const type = getTransactionType();
-        
-        fetch(`/categories/api/search/?q=${encodeURIComponent(query)}&type=${type}`)
-            .then(response => response.json())
-            .then(data => {
-                currentSuggestions = data.categories;
-                displaySuggestions(data.categories);
-            });
-    });
-    
-    // Keyboard navigation
-    categorySearch.addEventListener('keydown', function(e) {
-        const items = suggestions.querySelectorAll('.category-suggestion');
-        
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
-            updateSelection(items);
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            selectedIndex = Math.max(selectedIndex - 1, 0);
-            updateSelection(items);
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (selectedIndex >= 0 && currentSuggestions[selectedIndex]) {
-                selectCategory(currentSuggestions[selectedIndex]);
-            }
-        } else if (e.key === 'Escape') {
-            hideSuggestions();
-        }
-    });
-    
-    // Click outside to close
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.category-autocomplete')) {
-            hideSuggestions();
-        }
-    });
-    
-    // Focus handler
-    categorySearch.addEventListener('focus', function() {
-        if (currentSuggestions.length > 0) {
-            suggestions.classList.add('show');
-        }
-    });
-    
-    // Dropdown change handler
-    categoryDropdown.addEventListener('change', function() {
-        const option = this.options[this.selectedIndex];
-        if (option.value) {
-            selectCategory({
-                id: option.value,
-                name: option.textContent.trim(),
-                color: option.dataset.color,
-                icon: option.dataset.icon
-            });
-        } else {
-            clearCategory();
-        }
-    });
-    
-    // Transaction type change - refresh suggestions
-    typeInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            if (categorySearch.value) {
-                categorySearch.dispatchEvent(new Event('input'));
-            }
-        });
-    });
-    
-    function displaySuggestions(categories) {
-        if (categories.length === 0) {
-            suggestions.innerHTML = '<div class="category-suggestion"><span class="text-muted">No categories found</span></div>';
-            suggestions.classList.add('show');
-            return;
-        }
-        
-        suggestions.innerHTML = categories.map((cat, index) => `
-            <div class="category-suggestion" data-index="${index}">
-                <span class="category-icon-preview" style="background-color: ${cat.color}20; color: ${cat.color};">
-                    <i class="${cat.icon}"></i>
-                </span>
-                <div class="category-suggestion-info">
-                    <div class="category-suggestion-name">${cat.name}</div>
-                    <div class="category-suggestion-type">${cat.type}</div>
-                </div>
-            </div>
-        `).join('');
-        
-        suggestions.querySelectorAll('.category-suggestion').forEach((item, index) => {
-            item.addEventListener('click', () => selectCategory(categories[index]));
-        });
-        
-        suggestions.classList.add('show');
-        selectedIndex = -1;
-    }
-    
-    function updateSelection(items) {
-        items.forEach((item, index) => {
-            item.classList.toggle('selected', index === selectedIndex);
-        });
-    }
-    
-    function selectCategory(cat) {
-        categoryInput.value = cat.id;
-        showSelectedCategory(cat.id, cat.name, cat.color, cat.icon);
-        hideSuggestions();
-        categorySearch.value = '';
-        categoryDropdown.value = cat.id;
-        
-        // Load subcategories
-        loadSubcategories(cat.id);
-    }
-    
-    function showSelectedCategory(id, name, color, icon) {
-        selectedIcon.style.backgroundColor = color + '20';
-        selectedIcon.style.color = color;
-        selectedIcon.innerHTML = `<i class="${icon}"></i>`;
-        selectedName.textContent = name;
-        selectedDisplay.style.display = 'flex';
-        categorySearch.style.display = 'none';
-    }
-    
-    function hideSuggestions() {
-        suggestions.classList.remove('show');
-        selectedIndex = -1;
-    }
-    
-    window.clearCategory = function() {
-        categoryInput.value = '';
-        categoryDropdown.value = '';
-        selectedDisplay.style.display = 'none';
-        categorySearch.style.display = 'block';
-        categorySearch.value = '';
-        subcategorySelect.innerHTML = '<option value="">---------</option>';
+    // Toggle Notes
+    window.toggleNotes = function() {
+        const content = document.getElementById('notesContent');
+        const icon = document.getElementById('notesToggleIcon');
+        content.classList.toggle('show');
+        icon.classList.toggle('rotated');
     };
     
-    function loadSubcategories(categoryId) {
-        fetch(`/categories/api/subcategories/${categoryId}/`)
-            .then(response => response.json())
-            .then(data => {
-                subcategorySelect.innerHTML = '<option value="">---------</option>';
-                data.subcategories.forEach(sub => {
-                    subcategorySelect.innerHTML += `<option value="${sub.id}">${sub.name}</option>`;
-                });
-            });
+    // Toggle Receipts
+    window.toggleReceipts = function() {
+        const content = document.getElementById('receiptsContent');
+        const icon = document.getElementById('receiptsToggleIcon');
+        content.classList.toggle('show');
+        icon.classList.toggle('rotated');
+    };
+    
+    // Auto-show notes if has content
+    const notesTextarea = document.querySelector('textarea[name="notes"]');
+    if (notesTextarea && notesTextarea.value.trim()) {
+        toggleNotes();
     }
+    
+    // Auto-show receipts if editing with existing receipts
+    {% if existing_receipts %}
+    toggleReceipts();
+    {% endif %}
+    
+    // Receipt upload handling
+    const receiptInput = document.getElementById('receiptInput');
+    const previewRow = document.getElementById('previewRow');
+    const receiptCount = document.getElementById('receiptCount');
+    let selectedFiles = [];
+    
+    receiptInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
+            if (!file.type.startsWith('image/')) return;
+            
+            selectedFiles.push(file);
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'preview-item';
+                div.dataset.index = selectedFiles.length - 1;
+                div.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview">
+                    <button type="button" onclick="removePreview(${selectedFiles.length - 1})">
+                        <i class="bi bi-x"></i>
+                    </button>
+                `;
+                previewRow.appendChild(div);
+                updateReceiptCount();
+            };
+            reader.readAsDataURL(file);
+        });
+        
+        updateFileInput();
+        
+        // Auto-show receipts section
+        if (!document.getElementById('receiptsContent').classList.contains('show')) {
+            toggleReceipts();
+        }
+    });
+    
+    window.removePreview = function(index) {
+        selectedFiles[index] = null;
+        const item = previewRow.querySelector(`[data-index="${index}"]`);
+        if (item) item.remove();
+        updateFileInput();
+        updateReceiptCount();
+    };
+    
+    function updateFileInput() {
+        const dt = new DataTransfer();
+        selectedFiles.filter(f => f !== null).forEach(file => {
+            dt.items.add(file);
+        });
+        receiptInput.files = dt.files;
+    }
+    
+    function updateReceiptCount() {
+        const count = selectedFiles.filter(f => f !== null).length;
+        const countEl = document.getElementById('receiptCount');
+        if (count > 0) {
+            countEl.textContent = count;
+            countEl.style.display = 'inline-block';
+        } else {
+            countEl.style.display = 'none';
+        }
+    }
+    
+    // Initialize receipt count as hidden
+    document.getElementById('receiptCount').style.display = 'none';
+    
+    // Load subcategories on category change
+    const categorySelect = document.getElementById('categorySelect');
+    const subcategorySelect = document.getElementById('id_subcategory');
+    
+    categorySelect.addEventListener('change', function() {
+        const categoryId = this.value;
+        if (categoryId) {
+            fetch(`/categories/api/subcategories/${categoryId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    subcategorySelect.innerHTML = '<option value="">Subcategory</option>';
+                    data.subcategories.forEach(sub => {
+                        subcategorySelect.innerHTML += `<option value="${sub.id}">${sub.name}</option>`;
+                    });
+                });
+        } else {
+            subcategorySelect.innerHTML = '<option value="">Subcategory</option>';
+        }
+    });
+    
+    // Type toggle slider
+    const typeToggle = document.querySelector('.type-toggle');
+    const slider = document.querySelector('.type-slider');
+    const typeInputs = document.querySelectorAll('input[name="transaction_type"]');
+    
+    function updateSlider() {
+        const checkedInput = document.querySelector('input[name="transaction_type"]:checked');
+        if (checkedInput && checkedInput.value === 'credit') {
+            slider.style.transform = 'translateX(100%)';
+        } else {
+            slider.style.transform = 'translateX(0)';
+        }
+    }
+    
+    typeInputs.forEach(input => {
+        input.addEventListener('change', updateSlider);
+    });
+    
+    updateSlider();
 });
 </script>
 {% endblock %}

@@ -92,8 +92,8 @@
                 <h6>Income vs Expenses</h6>
                 <span class="section-meta">Last 6 months</span>
             </div>
-            <div class="chart-container">
-                <canvas id="incomeExpenseChart" height="220"></canvas>
+            <div class="chart-container" style="height: 300px;">
+                <canvas id="incomeExpenseChart"></canvas>
             </div>
         </div>
 
@@ -462,7 +462,13 @@
 
 /* Chart Container */
 .chart-container {
-    height: 220px;
+    height: 300px;
+    position: relative;
+}
+
+.chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 /* Category Bars - Horizontal */
@@ -470,6 +476,7 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
+    min-height: 280px;
 }
 
 .category-bar-item {

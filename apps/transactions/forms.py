@@ -1,7 +1,39 @@
 from django import forms
-from .models import Transaction
+from django.forms.widgets import ClearableFileInput
+from .models import Transaction, TransactionTemplate, TransactionReceipt
 from apps.wallets.models import Account
 from apps.categories.models import Category, SubCategory
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    """Custom widget that allows multiple file selection"""
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    """Custom field for handling multiple files"""
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = [single_file_clean(data, initial)]
+        return result
+
+
+class ReceiptUploadForm(forms.Form):
+    """Form for uploading receipt images"""
+    images = MultipleFileField(
+        required=False,
+        widget=MultipleFileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/*',
+        })
+    )
 
 
 class TransactionForm(forms.ModelForm):
@@ -48,6 +80,106 @@ class TransactionForm(forms.ModelForm):
         self.fields['subcategory'].required = False
         self.fields['category'].required = False
         self.fields['notes'].required = False
+
+
+class TransactionTemplateForm(forms.ModelForm):
+    """Form for creating/editing transaction templates"""
+    
+    class Meta:
+        model = TransactionTemplate
+        fields = ['name', 'description', 'account', 'category', 'subcategory', 'transaction_type', 'default_amount', 'icon', 'color']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Monthly Rent, Salary, Netflix'
+            }),
+            'description': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Transaction description that will appear'
+            }),
+            'account': forms.Select(attrs={'class': 'form-select'}),
+            'category': forms.Select(attrs={'class': 'form-select'}),
+            'subcategory': forms.Select(attrs={'class': 'form-select'}),
+            'transaction_type': forms.Select(attrs={'class': 'form-select'}),
+            'default_amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Optional - leave empty to enter each time',
+                'step': '0.01',
+                'min': '0'
+            }),
+            'icon': forms.Select(attrs={'class': 'form-select'}),
+            'color': forms.TextInput(attrs={
+                'class': 'form-control form-control-color',
+                'type': 'color'
+            }),
+        }
+    
+    ICON_CHOICES = [
+        ('bi-arrow-repeat', '🔄 Recurring'),
+        ('bi-house', '🏠 Home/Rent'),
+        ('bi-lightning', '⚡ Utilities'),
+        ('bi-wifi', '📶 Internet'),
+        ('bi-phone', '📱 Phone'),
+        ('bi-tv', '📺 Streaming'),
+        ('bi-car-front', '🚗 Car/Transport'),
+        ('bi-fuel-pump', '⛽ Fuel'),
+        ('bi-bag', '🛍️ Shopping'),
+        ('bi-cart', '🛒 Groceries'),
+        ('bi-cup-hot', '☕ Coffee'),
+        ('bi-currency-dollar', '💰 Salary'),
+        ('bi-briefcase', '💼 Business'),
+        ('bi-heart', '❤️ Health'),
+        ('bi-book', '📚 Education'),
+        ('bi-gift', '🎁 Gift'),
+        ('bi-controller', '🎮 Entertainment'),
+        ('bi-music-note', '🎵 Music'),
+        ('bi-film', '🎬 Movies'),
+    ]
+    
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['account'].queryset = Account.objects.filter(user=user, is_active=True)
+        self.fields['category'].queryset = Category.objects.filter(is_active=True)
+        self.fields['subcategory'].queryset = SubCategory.objects.filter(is_active=True)
+        
+        self.fields['subcategory'].required = False
+        self.fields['category'].required = False
+        self.fields['default_amount'].required = False
+        
+        # Set icon choices
+        self.fields['icon'] = forms.ChoiceField(
+            choices=self.ICON_CHOICES,
+            widget=forms.Select(attrs={'class': 'form-select'})
+        )
+
+
+class QuickTransactionForm(forms.Form):
+    """Form for quickly adding transaction from template"""
+    amount = forms.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control form-control-lg',
+            'placeholder': 'Enter amount',
+            'step': '0.01',
+            'min': '0',
+            'autofocus': True
+        })
+    )
+    date = forms.DateField(
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date'
+        })
+    )
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 2,
+            'placeholder': 'Optional notes'
+        })
+    )
 
 
 class BulkTransactionForm(forms.Form):
