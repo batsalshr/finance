@@ -1,0 +1,462 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+    <!-- Header -->
+    <div class="page-header">
+        <h1>Settings</h1>
+        <p>Configure your app preferences</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- Currency Settings -->
+        <div class="settings-card">
+            <div class="card-icon">
+                <i class="bi bi-currency-exchange"></i>
+            </div>
+            <div class="card-content">
+                <div class="card-header">
+                    <h2>Currency</h2>
+                    <p>Choose your preferred currency for all transactions</p>
+                </div>
+                <div class="card-body">
+                    <div class="currency-select">
+                        {{ form.currency }}
+                    </div>
+                    <span class="hint">This will be displayed across all accounts, transactions, and reports</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications (Coming Soon) -->
+        <div class="settings-card disabled">
+            <div class="card-icon">
+                <i class="bi bi-bell"></i>
+            </div>
+            <div class="card-content">
+                <div class="card-header">
+                    <h2>Notifications</h2>
+                    <span class="badge-soon">Coming Soon</span>
+                </div>
+                <p class="card-desc">Get alerts for spending limits, bill reminders, and weekly summaries</p>
+                
+                <div class="toggle-list">
+                    <div class="toggle-item">
+                        <div>
+                            <span class="toggle-label">Budget Alerts</span>
+                            <span class="toggle-desc">Notify when approaching budget limits</span>
+                        </div>
+                        <div class="toggle-switch disabled">
+                            <input type="checkbox" disabled>
+                            <span class="slider"></span>
+                        </div>
+                    </div>
+                    <div class="toggle-item">
+                        <div>
+                            <span class="toggle-label">Weekly Summary</span>
+                            <span class="toggle-desc">Receive weekly spending report via email</span>
+                        </div>
+                        <div class="toggle-switch disabled">
+                            <input type="checkbox" disabled>
+                            <span class="slider"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Appearance (Coming Soon) -->
+        <div class="settings-card disabled">
+            <div class="card-icon">
+                <i class="bi bi-palette"></i>
+            </div>
+            <div class="card-content">
+                <div class="card-header">
+                    <h2>Appearance</h2>
+                    <span class="badge-soon">Coming Soon</span>
+                </div>
+                <p class="card-desc">Customize the look and feel of your dashboard</p>
+                
+                <div class="theme-options">
+                    <div class="theme-option active">
+                        <div class="theme-preview light"></div>
+                        <span>Light</span>
+                    </div>
+                    <div class="theme-option">
+                        <div class="theme-preview dark"></div>
+                        <span>Dark</span>
+                    </div>
+                    <div class="theme-option">
+                        <div class="theme-preview auto"></div>
+                        <span>System</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Management (Coming Soon) -->
+        <div class="settings-card disabled">
+            <div class="card-icon">
+                <i class="bi bi-database"></i>
+            </div>
+            <div class="card-content">
+                <div class="card-header">
+                    <h2>Data Management</h2>
+                    <span class="badge-soon">Coming Soon</span>
+                </div>
+                <p class="card-desc">Export your data or manage your account</p>
+                
+                <div class="action-buttons">
+                    <button type="button" class="btn-action" disabled>
+                        <i class="bi bi-download"></i>
+                        Export All Data
+                    </button>
+                    <button type="button" class="btn-action danger" disabled>
+                        <i class="bi bi-trash3"></i>
+                        Delete Account
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="form-actions">
+            <button type="submit" class="btn-save">
+                <i class="bi bi-check-lg"></i>
+                Save Settings
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+.settings-page {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.page-header {
+    margin-bottom: 24px;
+}
+
+.page-header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.page-header p {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 4px 0 0 0;
+}
+
+/* Settings Card */
+.settings-card {
+    display: flex;
+    gap: 20px;
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+}
+
+.settings-card.disabled {
+    opacity: 0.6;
+}
+
+.card-icon {
+    width: 48px;
+    height: 48px;
+    background: #f3f4f6;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #6b7280;
+    flex-shrink: 0;
+}
+
+.card-content {
+    flex: 1;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.card-header h2 {
+    font-size: 17px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.card-header p,
+.card-desc {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.card-body {
+    margin-top: 16px;
+}
+
+.badge-soon {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    background: #fef3c7;
+    color: #b45309;
+    border-radius: 4px;
+}
+
+/* Currency Select */
+.currency-select select {
+    width: 100%;
+    max-width: 300px;
+    padding: 12px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 15px;
+    color: #111827;
+    background: white;
+    cursor: pointer;
+}
+
+.currency-select select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.hint {
+    display: block;
+    font-size: 13px;
+    color: #9ca3af;
+    margin-top: 8px;
+}
+
+/* Toggle List */
+.toggle-list {
+    margin-top: 16px;
+}
+
+.toggle-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.toggle-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.toggle-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+}
+
+.toggle-desc {
+    display: block;
+    font-size: 13px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-switch .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #e5e7eb;
+    border-radius: 24px;
+    transition: 0.3s;
+}
+
+.toggle-switch .slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+.toggle-switch input:checked + .slider {
+    background: #6366f1;
+}
+
+.toggle-switch input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+.toggle-switch.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Theme Options */
+.theme-options {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.theme-option {
+    text-align: center;
+    cursor: pointer;
+    opacity: 0.5;
+}
+
+.theme-option.active {
+    opacity: 1;
+}
+
+.theme-preview {
+    width: 80px;
+    height: 56px;
+    border-radius: 10px;
+    border: 2px solid #e5e7eb;
+    margin-bottom: 6px;
+}
+
+.theme-preview.light {
+    background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.theme-preview.dark {
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+}
+
+.theme-preview.auto {
+    background: linear-gradient(135deg, #f8fafc 50%, #1e293b 50%);
+}
+
+.theme-option.active .theme-preview {
+    border-color: #6366f1;
+}
+
+.theme-option span {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+}
+
+.btn-action:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-action.danger {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.btn-save {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: #111827;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-save:hover {
+    background: #1f2937;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .settings-card {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .card-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+    
+    .theme-options {
+        justify-content: space-between;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .btn-save {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}

@@ -38,16 +38,15 @@ class UserLoginForm(AuthenticationForm):
 
 
 class UserProfileForm(forms.ModelForm):
-    """User profile update form"""
+    """User profile update form - personal info only"""
     first_name = forms.CharField(max_length=30, required=True)
     last_name = forms.CharField(max_length=30, required=True)
     email = forms.EmailField(required=True)
     
     class Meta:
         model = UserProfile
-        fields = ['profile_picture', 'currency']
+        fields = ['profile_picture']
         widgets = {
-            'currency': forms.Select(attrs={'class': 'form-select'}),
             'profile_picture': forms.FileInput(attrs={'class': 'form-control'}),
         }
     
@@ -57,18 +56,24 @@ class UserProfileForm(forms.ModelForm):
             self.fields['first_name'].initial = self.instance.user.first_name
             self.fields['last_name'].initial = self.instance.user.last_name
             self.fields['email'].initial = self.instance.user.email
-        
-        self.fields['first_name'].widget.attrs['class'] = 'form-control'
-        self.fields['last_name'].widget.attrs['class'] = 'form-control'
-        self.fields['email'].widget.attrs['class'] = 'form-control'
     
     def save(self, commit=True):
         profile = super().save(commit=False)
         if commit:
-            # Update User model fields
             profile.user.first_name = self.cleaned_data['first_name']
             profile.user.last_name = self.cleaned_data['last_name']
             profile.user.email = self.cleaned_data['email']
             profile.user.save()
             profile.save()
         return profile
+
+
+class UserSettingsForm(forms.ModelForm):
+    """User settings form - preferences only"""
+    
+    class Meta:
+        model = UserProfile
+        fields = ['currency']
+        widgets = {
+            'currency': forms.Select(attrs={'class': 'form-select'}),
+        }

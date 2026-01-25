@@ -52,18 +52,21 @@
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'accounts:profile' %}">
+                    <i class="bi bi-person"></i>
+                    <span>Profile</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'settings' %}active{% endif %}" href="{% url 'accounts:settings' %}">
                     <i class="bi bi-gear"></i>
                     <span>Settings</span>
                 </a>
             </li>
             <li class="nav-item">
-                <form method="post" action="{% url 'accounts:logout' %}" id="logoutForm">
-                    {% csrf_token %}
-                    <a class="nav-link" href="#" onclick="document.getElementById('logoutForm').submit(); return false;">
-                        <i class="bi bi-box-arrow-left"></i>
-                        <span>Log Out</span>
-                    </a>
-                </form>
+                <a class="nav-link text-danger" href="{% url 'accounts:logout' %}">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>Log Out</span>
+                </a>
             </li>
         </ul>
     </div>

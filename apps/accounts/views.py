@@ -6,7 +6,7 @@ from django.views.generic import CreateView, UpdateView
 from django.urls import reverse_lazy
 from django.contrib import messages
 
-from .forms import UserRegistrationForm, UserLoginForm, UserProfileForm
+from .forms import UserRegistrationForm, UserLoginForm, UserProfileForm, UserSettingsForm
 from .models import UserProfile
 
 
@@ -58,7 +58,7 @@ class UserLogoutView(LogoutView):
 
 
 class ProfileView(LoginRequiredMixin, UpdateView):
-    """User profile view"""
+    """User profile view - personal information"""
     model = UserProfile
     form_class = UserProfileForm
     template_name = 'accounts/profile.html'
@@ -69,9 +69,29 @@ class ProfileView(LoginRequiredMixin, UpdateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['page_title'] = 'Settings'
+        context['page_title'] = 'Profile'
         return context
     
     def form_valid(self, form):
         messages.success(self.request, 'Profile updated successfully!')
+        return super().form_valid(form)
+
+
+class SettingsView(LoginRequiredMixin, UpdateView):
+    """User settings view - app preferences"""
+    model = UserProfile
+    form_class = UserSettingsForm
+    template_name = 'accounts/settings.html'
+    success_url = reverse_lazy('accounts:settings')
+    
+    def get_object(self, queryset=None):
+        return self.request.user.profile
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Settings'
+        return context
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Settings saved successfully!')
         return super().form_valid(form)
