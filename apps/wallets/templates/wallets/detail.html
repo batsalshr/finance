@@ -4,122 +4,479 @@
 {% block title %}{{ account.name }} - Finance Tracker{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="d-flex align-items-center">
-            <a href="{% url 'wallets:list' %}" class="btn btn-link text-muted me-2">
-                <i class="bi bi-arrow-left"></i>
-            </a>
-            <div class="account-icon me-3" style="color: {{ account.color }}; background-color: {{ account.color }}20;">
-                <i class="{{ account.icon }} fs-4"></i>
+<div class="wallet-page">
+    <!-- Hero Card -->
+    <div class="wallet-hero" style="background: linear-gradient(135deg, {{ account.color }} 0%, {{ account.color }}dd 100%);">
+        <a href="{% url 'wallets:list' %}" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <a href="{% url 'wallets:edit' account.pk %}" class="edit-btn">
+            <i class="bi bi-pencil"></i>
+        </a>
+        
+        <div class="wallet-icon">
+            <i class="{{ account.icon }}"></i>
+        </div>
+        
+        <div class="wallet-info">
+            <span class="wallet-type">{{ account.get_account_type_display }}</span>
+            <h1 class="wallet-name">{{ account.name }}</h1>
+        </div>
+        
+        <div class="wallet-balance">
+            <span class="balance-label">{% if account.is_credit_card %}Amount Owed{% else %}Current Balance{% endif %}</span>
+            <span class="balance-amount">{{ currency_symbol }}{{ account.current_balance|floatformat:0|intcomma }}</span>
+        </div>
+        
+        {% if account.is_credit_card and account.credit_limit %}
+        <div class="credit-info">
+            <div class="credit-bar">
+                <div class="credit-used" style="width: {{ account.credit_utilization }}%"></div>
             </div>
-            <div>
-                <h4 class="mb-0">{{ account.name }}</h4>
-                <small class="text-muted">{{ account.get_account_type_display }}</small>
+            <div class="credit-details">
+                <span>{{ currency_symbol }}{{ account.available_credit|floatformat:0|intcomma }} available</span>
+                <span>{{ account.credit_utilization|floatformat:0 }}% used of {{ currency_symbol }}{{ account.credit_limit|floatformat:0|intcomma }}</span>
             </div>
         </div>
-        <div>
-            <a href="{% url 'wallets:edit' account.pk %}" class="btn btn-outline-primary">
-                <i class="bi bi-pencil me-2"></i>Edit
-            </a>
+        {% endif %}
+    </div>
+    
+    <!-- Stats Row -->
+    <div class="stats-row">
+        {% if not account.is_credit_card %}
+        <div class="stat-card">
+            <div class="stat-icon savings">
+                <i class="bi bi-piggy-bank"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-label">Savings</span>
+                <span class="stat-value">{{ currency_symbol }}{{ account.savings_amount|floatformat:0|intcomma }}</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon spendable">
+                <i class="bi bi-wallet2"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-label">Spendable</span>
+                <span class="stat-value">{{ currency_symbol }}{{ account.actual_balance|floatformat:0|intcomma }}</span>
+            </div>
+        </div>
+        {% endif %}
+        <div class="stat-card">
+            <div class="stat-icon income">
+                <i class="bi bi-arrow-down-circle"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-label">Total Income</span>
+                <span class="stat-value green">{{ currency_symbol }}{{ account.total_credits|floatformat:0|intcomma }}</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon expense">
+                <i class="bi bi-arrow-up-circle"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-label">Total Expenses</span>
+                <span class="stat-value red">{{ currency_symbol }}{{ account.total_debits|floatformat:0|intcomma }}</span>
+            </div>
         </div>
     </div>
     
-    <!-- Account Stats -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Current Balance</p>
-                    <h3 class="mb-0">{{ currency_symbol }}{{ account.current_balance|floatformat:2|intcomma }}</h3>
+    <!-- Recent Transactions -->
+    <div class="transactions-section">
+        <div class="section-header">
+            <h2>Recent Transactions</h2>
+            <a href="{% url 'transactions:create' %}?account={{ account.pk }}" class="add-btn">
+                <i class="bi bi-plus-lg"></i>
+                Add
+            </a>
+        </div>
+        
+        {% if transactions %}
+        <div class="txn-list">
+            {% for transaction in transactions %}
+            <a href="{% url 'transactions:detail' transaction.pk %}" class="txn-item">
+                <div class="txn-icon" style="background: {% if transaction.category %}{{ transaction.category.color }}{% else %}#9ca3af{% endif %}">
+                    <i class="{% if transaction.category %}{{ transaction.category.icon }}{% else %}bi-receipt{% endif %}"></i>
                 </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Savings</p>
-                    <h3 class="mb-0 text-success">{{ currency_symbol }}{{ account.savings_amount|floatformat:2|intcomma }}</h3>
+                <div class="txn-details">
+                    <span class="txn-desc">{{ transaction.description }}</span>
+                    <span class="txn-meta">
+                        {{ transaction.date|date:"M d" }}
+                        {% if transaction.category %}· {{ transaction.category.name }}{% endif %}
+                    </span>
                 </div>
-            </div>
+                <span class="txn-amount {% if transaction.is_credit %}income{% else %}expense{% endif %}">
+                    {% if transaction.is_credit %}+{% else %}-{% endif %}{{ currency_symbol }}{{ transaction.amount|floatformat:0|intcomma }}
+                </span>
+            </a>
+            {% endfor %}
         </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Spendable</p>
-                    <h3 class="mb-0 {% if account.actual_balance >= 0 %}text-primary{% else %}text-danger{% endif %}">
-                        {{ currency_symbol }}{{ account.actual_balance|floatformat:2|intcomma }}
-                    </h3>
-                </div>
-            </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-receipt"></i>
+            <p>No transactions yet</p>
+            <a href="{% url 'transactions:create' %}?account={{ account.pk }}" class="add-first-btn">
+                Add your first transaction
+            </a>
         </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Total Expenses</p>
-                    <h3 class="mb-0 text-danger">{{ currency_symbol }}{{ account.total_debits|floatformat:2|intcomma }}</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Transaction History -->
-    <div class="card">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="card-title mb-0">Transaction History</h6>
-                <a href="{% url 'transactions:create' %}?account={{ account.pk }}" class="btn btn-sm btn-primary">
-                    <i class="bi bi-plus-lg me-1"></i>Add Transaction
-                </a>
-            </div>
-            
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th>Category</th>
-                            <th class="text-end">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for transaction in transactions %}
-                        <tr>
-                            <td>{{ transaction.date|date:"d M Y" }}</td>
-                            <td>
-                                <a href="{% url 'transactions:detail' transaction.pk %}" class="text-decoration-none">
-                                    {{ transaction.description }}
-                                </a>
-                            </td>
-                            <td>
-                                {% if transaction.category %}
-                                <span class="badge" style="background-color: {{ transaction.category.color }}">
-                                    {{ transaction.category.name }}
-                                </span>
-                                {% else %}
-                                <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end">
-                                {% if transaction.is_credit %}
-                                <span class="text-success">+{{ currency_symbol }}{{ transaction.amount|floatformat:2|intcomma }}</span>
-                                {% else %}
-                                <span class="text-danger">-{{ currency_symbol }}{{ transaction.amount|floatformat:2|intcomma }}</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" class="text-center text-muted py-4">
-                                No transactions for this account yet.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        {% endif %}
     </div>
 </div>
+
+<style>
+.wallet-page {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Hero Card */
+.wallet-hero {
+    position: relative;
+    padding: 24px;
+    border-radius: 20px;
+    color: white;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.wallet-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.back-btn, .edit-btn {
+    position: absolute;
+    top: 16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
+}
+
+.back-btn {
+    left: 16px;
+}
+
+.edit-btn {
+    right: 16px;
+}
+
+.back-btn:hover, .edit-btn:hover {
+    background: rgba(255,255,255,0.3);
+    color: white;
+}
+
+.wallet-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 16px;
+    backdrop-filter: blur(4px);
+}
+
+.wallet-type {
+    font-size: 13px;
+    opacity: 0.8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.wallet-name {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 4px 0 20px 0;
+}
+
+.balance-label {
+    font-size: 13px;
+    opacity: 0.8;
+    display: block;
+}
+
+.balance-amount {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+/* Credit Card Info */
+.credit-info {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.credit-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.credit-used {
+    height: 100%;
+    background: white;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.credit-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+/* Stats Row */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.stat-icon.savings {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.stat-icon.spendable {
+    background: #f3e8ff;
+    color: #9333ea;
+}
+
+.stat-icon.income {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.stat-icon.expense {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-label {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 2px;
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.stat-value.green {
+    color: #059669;
+}
+
+.stat-value.red {
+    color: #dc2626;
+}
+
+/* Transactions Section */
+.transactions-section {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.section-header h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: #111827;
+    color: white;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.add-btn:hover {
+    background: #1f2937;
+    color: white;
+}
+
+/* Transaction List */
+.txn-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.txn-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.txn-item:hover {
+    background: #f9fafb;
+}
+
+.txn-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.txn-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.txn-desc {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.txn-meta {
+    font-size: 13px;
+    color: #9ca3af;
+}
+
+.txn-amount {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.txn-amount.expense {
+    color: #111827;
+}
+
+.txn-amount.income {
+    color: #059669;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #9ca3af;
+}
+
+.empty-state i {
+    font-size: 40px;
+    margin-bottom: 12px;
+}
+
+.empty-state p {
+    margin: 0 0 16px 0;
+    color: #6b7280;
+}
+
+.add-first-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #f3f4f6;
+    color: #374151;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.add-first-btn:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+    .wallet-hero {
+        padding: 20px;
+    }
+    
+    .wallet-name {
+        font-size: 20px;
+    }
+    
+    .balance-amount {
+        font-size: 28px;
+    }
+    
+    .stats-row {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
 {% endblock %}

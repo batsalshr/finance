@@ -111,40 +111,34 @@
             </div>
         </div>
 
-        <!-- Receipt Upload -->
-        <div class="extras-section">
-            <div class="extra-toggle" onclick="toggleReceipts()">
-                <i class="bi bi-camera"></i>
-                <span>Add receipt</span>
-                <span class="receipt-count" id="receiptCount"></span>
-                <i class="bi bi-chevron-down toggle-icon" id="receiptsToggleIcon"></i>
+        <!-- Receipt Upload - Drag & Drop -->
+        <div class="receipt-drop-zone" id="receiptDropZone" onclick="document.getElementById('receiptInput').click()">
+            <input type="file" name="receipts" id="receiptInput" accept="image/*" multiple hidden>
+            <div class="drop-content">
+                <i class="bi bi-cloud-arrow-up"></i>
+                <span>Click or drag receipt here</span>
             </div>
-            <div class="extra-content" id="receiptsContent">
-                {% if existing_receipts %}
-                <div class="existing-receipts-row">
-                    {% for receipt in existing_receipts %}
-                    <div class="mini-receipt">
-                        <img src="{{ receipt.image.url }}" alt="Receipt">
-                        <form method="post" action="{% url 'transactions:receipt_delete' receipt.pk %}">
-                            {% csrf_token %}
-                            <button type="submit" class="mini-delete" onclick="return confirm('Delete?')">
-                                <i class="bi bi-x"></i>
-                            </button>
-                        </form>
-                    </div>
-                    {% endfor %}
+            <div class="preview-row" id="previewRow"></div>
+        </div>
+        
+        {% if existing_receipts %}
+        <div class="existing-receipts">
+            <span class="existing-label">Attached receipts</span>
+            <div class="existing-receipts-row">
+                {% for receipt in existing_receipts %}
+                <div class="mini-receipt">
+                    <img src="{{ receipt.image.url }}" alt="Receipt">
+                    <form method="post" action="{% url 'transactions:receipt_delete' receipt.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="mini-delete" onclick="return confirm('Delete?')">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </form>
                 </div>
-                {% endif %}
-                <div class="upload-row">
-                    <input type="file" name="receipts" id="receiptInput" accept="image/*" multiple hidden>
-                    <div class="upload-btn" onclick="document.getElementById('receiptInput').click()">
-                        <i class="bi bi-plus"></i>
-                        <span>Add photos</span>
-                    </div>
-                    <div class="preview-row" id="previewRow"></div>
-                </div>
+                {% endfor %}
             </div>
         </div>
+        {% endif %}
 
     </form>
 </div>
@@ -227,11 +221,11 @@
     font-weight: 500;
     color: #6b7280;
     border-radius: 8px;
-    transition: color 0.2s;
+    transition: color 0.3s ease;
 }
 
 .type-option input:checked + .type-btn {
-    color: #111827;
+    color: white;
 }
 
 .type-slider {
@@ -240,10 +234,15 @@
     left: 4px;
     width: calc(50% - 4px);
     height: calc(100% - 8px);
-    background: white;
+    background: #ef4444;
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    transition: transform 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.type-toggle.income-active .type-slider {
+    transform: translateX(100%);
+    background: #10b981;
 }
 
 /* Amount Section */
@@ -380,17 +379,6 @@
     transform: rotate(180deg);
 }
 
-.receipt-count {
-    background: #10b981;
-    color: white;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 10px;
-    min-width: 20px;
-    text-align: center;
-}
-
 .extra-content {
     display: none;
     padding: 0 16px 16px;
@@ -406,20 +394,132 @@
     border-radius: 10px;
     padding: 12px;
     font-size: 14px;
+    font-family: inherit;
     resize: none;
     height: 80px;
     outline: none;
+    box-sizing: border-box;
 }
 
 .extra-content textarea:focus {
     border-color: #6366f1;
 }
 
-/* Receipt Upload */
+/* Receipt Drop Zone */
+.receipt-drop-zone {
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+    margin-bottom: 12px;
+}
+
+.receipt-drop-zone:hover {
+    border-color: #9ca3af;
+    background: #fafafa;
+}
+
+.receipt-drop-zone.dragover {
+    border-color: #10b981;
+    background: #ecfdf5;
+}
+
+.receipt-drop-zone.has-files {
+    border-style: solid;
+    border-color: #10b981;
+}
+
+.drop-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: #9ca3af;
+}
+
+.drop-content i {
+    font-size: 28px;
+}
+
+.drop-content span {
+    font-size: 13px;
+}
+
+.preview-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    justify-content: center;
+}
+
+.preview-row:empty {
+    display: none;
+}
+
+.preview-row:empty + .drop-content,
+.receipt-drop-zone:not(.has-files) .drop-content {
+    display: flex;
+}
+
+.receipt-drop-zone.has-files .drop-content {
+    display: none;
+}
+
+.preview-item {
+    width: 70px;
+    height: 70px;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #e5e7eb;
+}
+
+.preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-item button {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-item button:hover {
+    background: #dc2626;
+}
+
+/* Existing Receipts */
+.existing-receipts {
+    margin-bottom: 12px;
+}
+
+.existing-label {
+    font-size: 12px;
+    color: #6b7280;
+    display: block;
+    margin-bottom: 8px;
+}
+
 .existing-receipts-row {
     display: flex;
     gap: 8px;
-    margin-bottom: 12px;
     flex-wrap: wrap;
 }
 
@@ -454,64 +554,8 @@
     font-size: 10px;
 }
 
-.upload-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.upload-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 10px 16px;
-    background: white;
-    border: 1px dashed #d1d5db;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 13px;
-    color: #6b7280;
-    transition: all 0.2s;
-}
-
-.upload-btn:hover {
-    border-color: #6366f1;
-    color: #6366f1;
-}
-
-.preview-row {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.preview-item {
-    width: 60px;
-    height: 60px;
-    border-radius: 8px;
-    overflow: hidden;
-    position: relative;
-}
-
-.preview-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.preview-item button {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: rgba(0,0,0,0.6);
-    color: white;
-    border: none;
-    cursor: pointer;
-    font-size: 10px;
+.mini-delete:hover {
+    background: #dc2626;
 }
 
 /* Responsive */
@@ -556,33 +600,47 @@ document.addEventListener('DOMContentLoaded', function() {
         icon.classList.toggle('rotated');
     };
     
-    // Toggle Receipts
-    window.toggleReceipts = function() {
-        const content = document.getElementById('receiptsContent');
-        const icon = document.getElementById('receiptsToggleIcon');
-        content.classList.toggle('show');
-        icon.classList.toggle('rotated');
-    };
-    
     // Auto-show notes if has content
     const notesTextarea = document.querySelector('textarea[name="notes"]');
     if (notesTextarea && notesTextarea.value.trim()) {
         toggleNotes();
     }
     
-    // Auto-show receipts if editing with existing receipts
-    {% if existing_receipts %}
-    toggleReceipts();
-    {% endif %}
-    
     // Receipt upload handling
     const receiptInput = document.getElementById('receiptInput');
     const previewRow = document.getElementById('previewRow');
-    const receiptCount = document.getElementById('receiptCount');
+    const dropZone = document.getElementById('receiptDropZone');
     let selectedFiles = [];
     
     receiptInput.addEventListener('change', function(e) {
         const files = Array.from(e.target.files);
+        handleFiles(files);
+    });
+    
+    // Drag and drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+    });
+    
+    dropZone.addEventListener('drop', function(e) {
+        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+        handleFiles(files);
+    });
+    
+    function handleFiles(files) {
         files.forEach(file => {
             if (!file.type.startsWith('image/')) return;
             
@@ -595,30 +653,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 div.dataset.index = selectedFiles.length - 1;
                 div.innerHTML = `
                     <img src="${e.target.result}" alt="Preview">
-                    <button type="button" onclick="removePreview(${selectedFiles.length - 1})">
+                    <button type="button" onclick="removePreview(${selectedFiles.length - 1}); event.stopPropagation();">
                         <i class="bi bi-x"></i>
                     </button>
                 `;
                 previewRow.appendChild(div);
-                updateReceiptCount();
+                updateDropZoneState();
             };
             reader.readAsDataURL(file);
         });
         
         updateFileInput();
-        
-        // Auto-show receipts section
-        if (!document.getElementById('receiptsContent').classList.contains('show')) {
-            toggleReceipts();
-        }
-    });
+    }
     
     window.removePreview = function(index) {
         selectedFiles[index] = null;
         const item = previewRow.querySelector(`[data-index="${index}"]`);
         if (item) item.remove();
         updateFileInput();
-        updateReceiptCount();
+        updateDropZoneState();
     };
     
     function updateFileInput() {
@@ -629,19 +682,14 @@ document.addEventListener('DOMContentLoaded', function() {
         receiptInput.files = dt.files;
     }
     
-    function updateReceiptCount() {
-        const count = selectedFiles.filter(f => f !== null).length;
-        const countEl = document.getElementById('receiptCount');
-        if (count > 0) {
-            countEl.textContent = count;
-            countEl.style.display = 'inline-block';
+    function updateDropZoneState() {
+        const hasFiles = selectedFiles.filter(f => f !== null).length > 0;
+        if (hasFiles) {
+            dropZone.classList.add('has-files');
         } else {
-            countEl.style.display = 'none';
+            dropZone.classList.remove('has-files');
         }
     }
-    
-    // Initialize receipt count as hidden
-    document.getElementById('receiptCount').style.display = 'none';
     
     // Load subcategories on category change
     const categorySelect = document.getElementById('categorySelect');
@@ -671,9 +719,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateSlider() {
         const checkedInput = document.querySelector('input[name="transaction_type"]:checked');
         if (checkedInput && checkedInput.value === 'credit') {
-            slider.style.transform = 'translateX(100%)';
+            typeToggle.classList.add('income-active');
         } else {
-            slider.style.transform = 'translateX(0)';
+            typeToggle.classList.remove('income-active');
         }
     }
     
