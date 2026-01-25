@@ -17,6 +17,11 @@ class CategoryListView(LoginRequiredMixin, ListView):
     
     def get_queryset(self):
         return Category.objects.filter(is_active=True).prefetch_related('subcategories')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Categories'
+        return context
 
 
 class CategoryCreateView(LoginRequiredMixin, CreateView):
@@ -35,6 +40,7 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Create New Category'
         context['button_text'] = 'Create Category'
+        context['page_title'] = 'New Category'
         return context
 
 
@@ -56,6 +62,7 @@ class CategoryUpdateView(LoginRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Edit Category'
         context['button_text'] = 'Update Category'
+        context['page_title'] = 'Edit Category'
         return context
 
 
@@ -89,6 +96,7 @@ class SubCategoryCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Create New Subcategory'
         context['button_text'] = 'Create Subcategory'
+        context['page_title'] = 'New Subcategory'
         return context
 
 

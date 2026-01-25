@@ -67,6 +67,11 @@ class ProfileView(LoginRequiredMixin, UpdateView):
     def get_object(self, queryset=None):
         return self.request.user.profile
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Settings'
+        return context
+    
     def form_valid(self, form):
         messages.success(self.request, 'Profile updated successfully!')
         return super().form_valid(form)

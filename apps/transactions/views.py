@@ -59,6 +59,7 @@ class TransactionListView(LoginRequiredMixin, ListView):
             data=self.request.GET
         )
         context['currency_symbol'] = self.request.user.profile.currency_symbol
+        context['page_title'] = 'Transactions'
         return context
 
 
@@ -74,6 +75,7 @@ class TransactionDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['currency_symbol'] = self.request.user.profile.currency_symbol
+        context['page_title'] = 'Transaction Details'
         return context
 
 
@@ -98,6 +100,7 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Add New Transaction'
         context['button_text'] = 'Add Transaction'
+        context['page_title'] = 'New Transaction'
         return context
 
 
@@ -124,6 +127,7 @@ class TransactionUpdateView(LoginRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Edit Transaction'
         context['button_text'] = 'Update Transaction'
+        context['page_title'] = 'Edit Transaction'
         return context
 
 
@@ -217,4 +221,5 @@ class BulkImportView(LoginRequiredMixin, FormView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['sample_csv'] = "date,description,amount,type,account,category,notes\n2024-01-15,Grocery Shopping,3000,debit,Cash,Food,Weekly groceries"
+        context['page_title'] = 'Import Transactions'
         return context

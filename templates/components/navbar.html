@@ -3,7 +3,7 @@
         <button class="btn btn-link sidebar-toggle d-lg-none me-2" id="sidebarToggle">
             <i class="bi bi-list fs-4"></i>
         </button>
-        <h5 class="page-title mb-0 d-none d-md-block">{% block page_title %}Dashboard{% endblock %}</h5>
+        <h5 class="page-title mb-0 d-none d-md-block">{{ page_title|default:"Dashboard" }}</h5>
     </div>
     
     <div class="navbar-actions d-flex align-items-center gap-2">

@@ -38,6 +38,7 @@ class AccountListView(LoginRequiredMixin, ListView):
         context['spendable_balance'] = spendable_balance
         context['total_credit_debt'] = total_credit_debt
         context['currency_symbol'] = self.request.user.profile.currency_symbol
+        context['page_title'] = 'Accounts'
         return context
 
 
@@ -54,6 +55,7 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context['transactions'] = self.object.transactions.all()[:20]
         context['currency_symbol'] = self.request.user.profile.currency_symbol
+        context['page_title'] = self.object.name
         return context
 
 
@@ -73,6 +75,7 @@ class AccountCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Create New Account'
         context['button_text'] = 'Create Account'
+        context['page_title'] = 'New Account'
         return context
 
 
@@ -94,6 +97,7 @@ class AccountUpdateView(LoginRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Edit Account'
         context['button_text'] = 'Update Account'
+        context['page_title'] = 'Edit Account'
         return context
 
 

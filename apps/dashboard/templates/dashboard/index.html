@@ -2,21 +2,22 @@
 {% load humanize %}
 
 {% block title %}Dashboard - Finance Tracker{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
-    <!-- Header Section -->
-    <div class="dashboard-header">
+<div class="page-container">
+    <!-- Header -->
+    <div class="page-header">
         <div>
-            <h4 class="mb-1">Welcome back, {{ user.first_name|default:user.username }}!</h4>
-            <p class="text-muted mb-0">Here's your financial overview</p>
+            <h4>Welcome back, {{ user.first_name|default:user.username }}!</h4>
+            <p>Here's your financial overview</p>
         </div>
-        <a href="{% url 'transactions:create' %}" class="btn btn-dark btn-add-transaction">
+        <a href="{% url 'transactions:create' %}" class="btn btn-dark">
             <i class="bi bi-plus-lg me-2"></i>New Transaction
         </a>
     </div>
 
-    <!-- Balance Overview - Single Card Design -->
+    <!-- Balance Card -->
     <div class="balance-card">
         <div class="balance-main">
             <span class="balance-label">Available Balance</span>
@@ -24,215 +25,234 @@
             <span class="balance-subtext">of {{ currency_symbol }}{{ total_balance|floatformat:0|intcomma }} total</span>
         </div>
         <div class="balance-divider"></div>
-        <div class="balance-breakdown">
-            <div class="breakdown-item">
-                <div class="breakdown-icon income">
-                    <i class="bi bi-wallet2"></i>
-                </div>
-                <div class="breakdown-info">
-                    <span class="breakdown-label">Total Balance</span>
-                    <span class="breakdown-value">{{ currency_symbol }}{{ total_balance|floatformat:0|intcomma }}</span>
+        <div class="balance-stats">
+            <div class="stat-item">
+                <div class="stat-icon green"><i class="bi bi-wallet2"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Total Balance</span>
+                    <span class="stat-value">{{ currency_symbol }}{{ total_balance|floatformat:0|intcomma }}</span>
                 </div>
             </div>
-            <div class="breakdown-item">
-                <div class="breakdown-icon savings">
-                    <i class="bi bi-piggy-bank"></i>
-                </div>
-                <div class="breakdown-info">
-                    <span class="breakdown-label">Savings</span>
-                    <span class="breakdown-value">{{ currency_symbol }}{{ savings_balance|floatformat:0|intcomma }}</span>
+            <div class="stat-item">
+                <div class="stat-icon purple"><i class="bi bi-piggy-bank"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Savings</span>
+                    <span class="stat-value">{{ currency_symbol }}{{ savings_balance|floatformat:0|intcomma }}</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Charts Row - Side by Side -->
-    <div class="charts-row">
-        <!-- Income vs Expenses Chart -->
-        <div class="card chart-card">
-            <div class="card-header">
-                <h6 class="card-title mb-0">Income vs Expenses</h6>
-                <span class="chart-period">Last 6 months</span>
+    <!-- Credit Cards - Dark Theme, Bigger Design -->
+    {% if credit_cards %}
+    <div class="credit-cards-card">
+        <div class="cc-card-header">
+            <h6><i class="bi bi-credit-card me-2"></i>Credit Cards</h6>
+            <a href="{% url 'wallets:list' %}">View all <i class="bi bi-arrow-right"></i></a>
+        </div>
+        <div class="cc-grid">
+            {% for card in credit_cards %}
+            <a href="{% url 'wallets:detail' card.pk %}" class="cc-item">
+                <div class="cc-item-header">
+                    <div class="cc-icon" style="background:{{ card.color }}30;color:{{ card.color }}">
+                        <i class="{{ card.icon }}"></i>
+                    </div>
+                    <div class="cc-info">
+                        <span class="cc-name">{{ card.name }}</span>
+                        <span class="cc-limit">Credit Limit: {{ currency_symbol }}{{ card.credit_limit|floatformat:0|intcomma }}</span>
+                    </div>
+                </div>
+                <div class="cc-amounts">
+                    <div class="cc-amount-box">
+                        <span class="cc-amount-label">Used</span>
+                        <span class="cc-amount-value used">{{ currency_symbol }}{{ card.amount_owed|floatformat:0|intcomma }}</span>
+                    </div>
+                    <div class="cc-amount-box">
+                        <span class="cc-amount-label">Available</span>
+                        <span class="cc-amount-value available">{{ currency_symbol }}{{ card.available_credit|floatformat:0|intcomma }}</span>
+                    </div>
+                </div>
+                <div class="cc-progress">
+                    <div class="cc-progress-bar">
+                        <div class="cc-progress-fill {% if card.credit_utilization > 80 %}high{% elif card.credit_utilization > 50 %}medium{% else %}low{% endif %}" style="width:{{ card.credit_utilization|floatformat:0 }}%"></div>
+                    </div>
+                    <span class="cc-progress-text">{{ card.credit_utilization|floatformat:0 }}% utilized</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Charts Row -->
+    <div class="grid-2">
+        <!-- Income vs Expenses -->
+        <div class="section-card">
+            <div class="section-header">
+                <h6>Income vs Expenses</h6>
+                <span class="section-meta">Last 6 months</span>
             </div>
-            <div class="card-body">
+            <div class="chart-container">
                 <canvas id="incomeExpenseChart" height="220"></canvas>
             </div>
         </div>
 
-        <!-- Spending by Category Chart -->
-        <div class="card chart-card">
-            <div class="card-header">
-                <h6 class="card-title mb-0">Spending by Category</h6>
-                <span class="chart-period">This month</span>
+        <!-- Spending by Category - Horizontal Bars -->
+        <div class="section-card">
+            <div class="section-header">
+                <h6>Spending by Category</h6>
+                <span class="section-meta">This month</span>
             </div>
-            <div class="card-body">
-                <div class="category-chart-wrapper">
-                    <canvas id="categoryChart"></canvas>
-                    <div class="category-legend" id="categoryLegend"></div>
-                </div>
+            <div class="category-bars" id="categoryBars">
+                <!-- Filled by JS -->
             </div>
         </div>
     </div>
 
-    <!-- Bottom Row - Accounts & Transactions -->
-    <div class="bottom-row">
-        <!-- Accounts Grid -->
-        <div class="card accounts-card">
-            <div class="card-header">
-                <h6 class="card-title mb-0">Accounts</h6>
-                <a href="{% url 'wallets:create' %}" class="btn-icon-sm"><i class="bi bi-plus"></i></a>
+    <!-- Bottom Row -->
+    <div class="grid-2">
+        <!-- Accounts (including credit cards) -->
+        <div class="section-card">
+            <div class="section-header">
+                <h6>Accounts</h6>
+                <a href="{% url 'wallets:create' %}"><i class="bi bi-plus"></i></a>
             </div>
-            <div class="card-body">
-                <div class="accounts-grid">
-                    {% for account in accounts|slice:":6" %}
-                    <a href="{% url 'wallets:detail' account.pk %}" class="account-box">
-                        <div class="account-box-icon" style="background: {{ account.color }}15; color: {{ account.color }};">
-                            <i class="{{ account.icon }}"></i>
-                        </div>
-                        <div class="account-box-name">{{ account.name }}</div>
-                        <div class="account-box-balance {% if account.actual_balance < 0 %}text-danger{% endif %}">
-                            {{ currency_symbol }}{{ account.actual_balance|floatformat:0|intcomma }}
-                        </div>
-                    </a>
-                    {% empty %}
-                    <div class="text-center py-4 text-muted" style="grid-column: 1/-1;">
-                        <p class="mb-2">No accounts yet</p>
-                        <a href="{% url 'wallets:create' %}" class="btn btn-sm btn-outline-dark">Add Account</a>
+            <div class="accounts-mini-grid">
+                {% for account in accounts|slice:":4" %}
+                <a href="{% url 'wallets:detail' account.pk %}" class="account-mini">
+                    <div class="account-mini-icon" style="background:{{ account.color }}15;color:{{ account.color }}">
+                        <i class="{{ account.icon }}"></i>
                     </div>
-                    {% endfor %}
+                    <div class="account-mini-info">
+                        <span class="account-mini-name">{{ account.name }}</span>
+                        <span class="account-mini-balance {% if account.actual_balance < 0 %}text-danger{% endif %}">
+                            {{ currency_symbol }}{{ account.actual_balance|floatformat:0|intcomma }}
+                        </span>
+                    </div>
+                </a>
+                {% empty %}
+                <div class="empty-mini">
+                    <p>No accounts yet</p>
+                    <a href="{% url 'wallets:create' %}" class="btn btn-sm btn-dark">Add Account</a>
                 </div>
-                {% if accounts|length > 6 %}
-                <div class="text-center mt-3">
-                    <a href="{% url 'wallets:list' %}" class="view-all-link">View all accounts <i class="bi bi-arrow-right"></i></a>
-                </div>
-                {% endif %}
+                {% endfor %}
+                
+                {% for card in credit_cards|slice:":2" %}
+                <a href="{% url 'wallets:detail' card.pk %}" class="account-mini credit-card-mini">
+                    <div class="account-mini-icon" style="background:{{ card.color }}15;color:{{ card.color }}">
+                        <i class="{{ card.icon }}"></i>
+                    </div>
+                    <div class="account-mini-info">
+                        <span class="account-mini-name">{{ card.name }}</span>
+                        <span class="account-mini-balance text-danger">
+                            -{{ currency_symbol }}{{ card.amount_owed|floatformat:0|intcomma }}
+                        </span>
+                    </div>
+                    <span class="cc-badge">Credit</span>
+                </a>
+                {% endfor %}
             </div>
         </div>
 
-        <!-- Recent Transactions - Only 4 -->
-        <div class="card transactions-card">
-            <div class="card-header">
-                <h6 class="card-title mb-0">Recent Transactions</h6>
-                <a href="{% url 'transactions:create' %}" class="btn-icon-sm"><i class="bi bi-plus"></i></a>
+        <!-- Recent Transactions -->
+        <div class="section-card">
+            <div class="section-header">
+                <h6>Recent Transactions</h6>
+                <a href="{% url 'transactions:create' %}"><i class="bi bi-plus"></i></a>
             </div>
-            <div class="card-body p-0">
-                <div class="transactions-list">
-                    {% for transaction in recent_transactions|slice:":4" %}
-                    <a href="{% url 'transactions:detail' transaction.pk %}" class="transaction-item">
-                        <div class="transaction-icon" style="background: {% if transaction.category %}{{ transaction.category.color }}15{% else %}#f3f4f6{% endif %}; color: {% if transaction.category %}{{ transaction.category.color }}{% else %}#6b7280{% endif %};">
-                            <i class="{% if transaction.category %}{{ transaction.category.icon }}{% else %}bi-receipt{% endif %}"></i>
-                        </div>
-                        <div class="transaction-info">
-                            <span class="transaction-desc">{{ transaction.description|truncatewords:4 }}</span>
-                            <span class="transaction-date">{{ transaction.date|date:"d M" }}</span>
-                        </div>
-                        <span class="transaction-amount {% if transaction.is_credit %}income{% else %}expense{% endif %}">
-                            {% if transaction.is_credit %}+{% else %}-{% endif %}{{ currency_symbol }}{{ transaction.amount|floatformat:0|intcomma }}
-                        </span>
-                    </a>
-                    {% empty %}
-                    <div class="text-center py-4 text-muted">
-                        <p class="mb-2">No transactions yet</p>
-                        <a href="{% url 'transactions:create' %}" class="btn btn-sm btn-outline-dark">Add Transaction</a>
+            <div class="txn-mini-list">
+                {% for txn in recent_transactions|slice:":5" %}
+                <a href="{% url 'transactions:detail' txn.pk %}" class="txn-mini">
+                    <div class="txn-mini-icon" style="background:{% if txn.category %}{{ txn.category.color }}15{% else %}#f3f4f6{% endif %};color:{% if txn.category %}{{ txn.category.color }}{% else %}#9ca3af{% endif %}">
+                        <i class="{% if txn.category %}{{ txn.category.icon }}{% else %}bi-receipt{% endif %}"></i>
                     </div>
-                    {% endfor %}
+                    <div class="txn-mini-info">
+                        <span class="txn-mini-desc">{{ txn.description|truncatewords:3 }}</span>
+                        <span class="txn-mini-date">{{ txn.date|date:"d M" }}</span>
+                    </div>
+                    <span class="txn-mini-amount {% if txn.is_credit %}credit{% endif %}">
+                        {% if txn.is_credit %}+{% else %}-{% endif %}{{ currency_symbol }}{{ txn.amount|floatformat:0|intcomma }}
+                    </span>
+                </a>
+                {% empty %}
+                <div class="empty-mini">
+                    <p>No transactions yet</p>
+                    <a href="{% url 'transactions:create' %}" class="btn btn-sm btn-dark">Add Transaction</a>
                 </div>
+                {% endfor %}
             </div>
             {% if recent_transactions %}
-            <div class="card-footer">
-                <a href="{% url 'transactions:list' %}" class="view-all-link">View all transactions <i class="bi bi-arrow-right"></i></a>
-            </div>
+            <a href="{% url 'transactions:list' %}" class="section-footer-link">View all transactions <i class="bi bi-arrow-right"></i></a>
             {% endif %}
         </div>
     </div>
 </div>
 
-<!-- Floating Action Button for Mobile -->
+<!-- Mobile FAB -->
 <a href="{% url 'transactions:create' %}" class="fab d-lg-none">
     <i class="bi bi-plus-lg"></i>
 </a>
-{% endblock %}
 
-{% block extra_css %}
 <style>
-/* Dashboard Container */
-.dashboard-container {
+/* Page Container - 1400px */
+.page-container {
     max-width: 1400px;
     margin: 0 auto;
 }
 
-/* Header */
-.dashboard-header {
+/* Page Header */
+.page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
 }
 
-.dashboard-header h4 {
+.page-header h4 {
+    font-size: 22px;
     font-weight: 600;
     color: #111827;
+    margin: 0;
 }
 
-.btn-add-transaction {
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-weight: 500;
+.page-header p {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 2px 0 0 0;
 }
 
 /* Balance Card */
 .balance-card {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border-radius: 20px;
-    padding: 32px;
+    border-radius: 16px;
+    padding: 28px 32px;
     color: white;
     display: flex;
     align-items: center;
-    gap: 40px;
-    margin-bottom: 24px;
+    gap: 32px;
+    margin-bottom: 20px;
 }
 
-.balance-main {
-    flex: 1;
-}
-
-.balance-label {
-    font-size: 14px;
-    opacity: 0.7;
-    display: block;
-    margin-bottom: 8px;
-}
-
-.balance-amount {
-    font-size: 42px;
-    font-weight: 700;
-    margin: 0;
-    letter-spacing: -1px;
-}
-
-.balance-subtext {
-    font-size: 14px;
-    opacity: 0.6;
-}
+.balance-main { flex: 1; }
+.balance-label { font-size: 14px; opacity: 0.7; }
+.balance-amount { font-size: 40px; font-weight: 700; margin: 6px 0; }
+.balance-subtext { font-size: 14px; opacity: 0.5; }
 
 .balance-divider {
     width: 1px;
-    height: 80px;
-    background: rgba(255,255,255,0.2);
+    height: 70px;
+    background: rgba(255,255,255,0.15);
 }
 
-.balance-breakdown {
-    display: flex;
-    gap: 32px;
-}
+.balance-stats { display: flex; gap: 28px; }
 
-.breakdown-item {
+.stat-item {
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
-.breakdown-icon {
+.stat-icon {
     width: 44px;
     height: 44px;
     border-radius: 12px;
@@ -242,264 +262,438 @@
     font-size: 18px;
 }
 
-.breakdown-icon.income {
-    background: rgba(16, 185, 129, 0.2);
-    color: #10b981;
-}
+.stat-icon.green { background: rgba(16,185,129,0.2); color: #34d399; }
+.stat-icon.purple { background: rgba(139,92,246,0.2); color: #a78bfa; }
 
-.breakdown-icon.savings {
-    background: rgba(99, 102, 241, 0.2);
-    color: #818cf8;
-}
+.stat-info { display: flex; flex-direction: column; }
+.stat-label { font-size: 12px; opacity: 0.6; }
+.stat-value { font-size: 18px; font-weight: 600; }
 
-.breakdown-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.breakdown-label {
-    font-size: 12px;
-    opacity: 0.6;
-}
-
-.breakdown-value {
-    font-size: 18px;
-    font-weight: 600;
-}
-
-/* Charts Row - Side by Side */
-.charts-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    margin-bottom: 24px;
-}
-
-/* Bottom Row */
-.bottom-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-}
-
-/* Cards */
-.card {
-    border: none;
+/* Credit Cards Card - Dark Theme, Bigger Design */
+.credit-cards-card {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     border-radius: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    background: white;
+    padding: 24px;
+    margin-bottom: 20px;
+    color: white;
 }
 
-.card-header {
+.cc-card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 20px;
-    background: none;
-    border-bottom: 1px solid #f3f4f6;
+    margin-bottom: 20px;
 }
 
-.card-title {
+.cc-card-header h6 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.cc-card-header a {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    text-decoration: none;
+}
+
+.cc-card-header a:hover { color: white; }
+
+.cc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+.cc-item {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 14px;
+    text-decoration: none;
+    color: white;
+    transition: all 0.2s;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.cc-item:hover {
+    background: rgba(255,255,255,0.12);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.cc-item-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.cc-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.cc-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cc-name {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.cc-limit {
+    font-size: 13px;
+    opacity: 0.6;
+}
+
+.cc-amounts {
+    display: flex;
+    gap: 24px;
+}
+
+.cc-amount-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 16px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+}
+
+.cc-amount-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.6;
+}
+
+.cc-amount-value {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.cc-amount-value.used { color: #f87171; }
+.cc-amount-value.available { color: #4ade80; }
+
+.cc-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cc-progress-bar {
+    height: 8px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.cc-progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+
+.cc-progress-fill.low { background: linear-gradient(90deg, #4ade80, #22c55e); }
+.cc-progress-fill.medium { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+.cc-progress-fill.high { background: linear-gradient(90deg, #f87171, #ef4444); }
+
+.cc-progress-text {
+    font-size: 12px;
+    opacity: 0.6;
+    text-align: right;
+}
+
+/* Section Card */
+.section-card {
+    background: white;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.section-header h6 {
+    font-size: 15px;
     font-weight: 600;
     color: #111827;
+    margin: 0;
 }
 
-.card-body {
-    padding: 20px;
+.section-header a {
+    font-size: 12px;
+    color: #6b7280;
+    text-decoration: none;
 }
 
-.card-footer {
-    padding: 12px 20px;
-    background: none;
-    border-top: 1px solid #f3f4f6;
-}
+.section-header a:hover { color: #111827; }
 
-.chart-period {
+.section-meta {
     font-size: 12px;
     color: #9ca3af;
 }
 
-.btn-icon-sm {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #6b7280;
-    background: #f3f4f6;
-    transition: all 0.2s;
-    text-decoration: none;
-}
-
-.btn-icon-sm:hover {
-    background: #e5e7eb;
-    color: #111827;
-}
-
-/* Category Chart */
-.category-chart-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 32px;
-}
-
-.category-chart-wrapper canvas {
-    max-width: 160px;
-    max-height: 160px;
-}
-
-.category-legend {
-    flex: 1;
+/* Grid */
+.grid-2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px 24px;
+    gap: 20px;
 }
 
-.legend-item {
+/* Chart Container */
+.chart-container {
+    height: 220px;
+}
+
+/* Category Bars - Horizontal */
+.category-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.category-bar-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.category-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.category-bar-name {
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 13px;
+    font-weight: 500;
     color: #374151;
 }
 
-.legend-dot {
+.category-bar-dot {
     width: 10px;
     height: 10px;
-    border-radius: 3px;
-    flex-shrink: 0;
+    border-radius: 50%;
 }
 
-/* Accounts Grid */
-.accounts-grid {
+.category-bar-values {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.category-bar-amount {
+    font-weight: 600;
+    color: #111827;
+}
+
+.category-bar-percent {
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+.category-bar-track {
+    height: 8px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.category-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.category-bars-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+/* Accounts Mini Grid */
+.accounts-mini-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
 }
 
-.account-box {
+.account-mini {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 10px;
     background: #f9fafb;
-    border-radius: 12px;
-    padding: 16px;
     text-decoration: none;
     color: inherit;
-    transition: all 0.2s;
-    text-align: center;
+    transition: background 0.15s;
+    position: relative;
 }
 
-.account-box:hover {
-    background: #f3f4f6;
-    transform: translateY(-2px);
+.account-mini:hover { background: #f3f4f6; }
+
+.account-mini.credit-card-mini {
+    border: 1px solid #e9d5ff;
+    background: #faf5ff;
 }
 
-.account-box-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+.account-mini.credit-card-mini:hover {
+    background: #f3e8ff;
+}
+
+.cc-badge {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    background: #8b5cf6;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.account-mini-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
-    margin: 0 auto 10px;
+    font-size: 15px;
 }
 
-.account-box-name {
-    font-weight: 500;
+.account-mini-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.account-mini-name {
     font-size: 13px;
-    color: #374151;
-    margin-bottom: 4px;
+    font-weight: 500;
+    color: #111827;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.account-box-balance {
-    font-weight: 600;
+.account-mini-balance {
     font-size: 14px;
+    font-weight: 600;
     color: #111827;
 }
 
-/* Transactions List */
-.transactions-list {
+/* Transactions Mini List */
+.txn-mini-list {
     display: flex;
     flex-direction: column;
 }
 
-.transaction-item {
+.txn-mini {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 14px 20px;
+    padding: 10px 0;
     text-decoration: none;
     color: inherit;
-    transition: background 0.2s;
-    border-bottom: 1px solid #f9fafb;
+    border-bottom: 1px solid #f3f4f6;
 }
 
-.transaction-item:last-child {
-    border-bottom: none;
-}
+.txn-mini:last-child { border-bottom: none; }
+.txn-mini:hover { background: #f9fafb; margin: 0 -12px; padding: 10px 12px; border-radius: 8px; }
 
-.transaction-item:hover {
-    background: #f9fafb;
-}
-
-.transaction-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
+.txn-mini-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 14px;
 }
 
-.transaction-info {
+.txn-mini-info {
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
-.transaction-desc {
+.txn-mini-desc {
+    font-size: 13px;
     font-weight: 500;
     color: #111827;
-    font-size: 14px;
 }
 
-.transaction-date {
-    font-size: 12px;
+.txn-mini-date {
+    font-size: 11px;
     color: #9ca3af;
 }
 
-.transaction-amount {
-    font-weight: 600;
+.txn-mini-amount {
     font-size: 14px;
-}
-
-.transaction-amount.income {
-    color: #10b981;
-}
-
-.transaction-amount.expense {
+    font-weight: 600;
     color: #111827;
 }
 
-.view-all-link {
-    font-size: 13px;
+.txn-mini-amount.credit { color: #10b981; }
+
+.section-footer-link {
+    display: block;
+    text-align: center;
+    padding: 12px;
+    margin-top: 8px;
+    font-size: 12px;
     color: #6b7280;
     text-decoration: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
+    border-top: 1px solid #f3f4f6;
 }
 
-.view-all-link:hover {
-    color: #111827;
+.section-footer-link:hover { color: #111827; }
+
+/* Empty State */
+.empty-mini {
+    text-align: center;
+    padding: 24px;
+    color: #6b7280;
+    grid-column: 1 / -1;
 }
 
-/* Floating Action Button */
+.empty-mini p {
+    margin-bottom: 12px;
+    font-size: 13px;
+}
+
+/* FAB */
 .fab {
     position: fixed;
     bottom: 24px;
@@ -515,67 +709,25 @@
     font-size: 24px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.2);
     z-index: 100;
-    transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.fab:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 24px rgba(0,0,0,0.25);
-    color: white;
-}
+.fab:hover { transform: scale(1.05); color: white; }
 
 /* Responsive */
-@media (max-width: 1200px) {
-    .charts-row,
-    .bottom-row {
-        grid-template-columns: 1fr;
-    }
-    
-    .accounts-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
+@media (max-width: 1024px) {
+    .grid-2 { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 768px) {
-    .balance-card {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 24px;
-        padding: 24px;
-    }
-    
-    .balance-divider {
-        width: 100%;
-        height: 1px;
-    }
-    
-    .balance-amount {
-        font-size: 32px;
-    }
-    
-    .dashboard-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
-    }
-    
-    .btn-add-transaction {
-        display: none;
-    }
-    
-    .accounts-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .category-chart-wrapper {
-        flex-direction: column;
-        gap: 20px;
-    }
-    
-    .category-chart-wrapper canvas {
-        max-width: 140px;
-        max-height: 140px;
-    }
+    .balance-card { flex-direction: column; align-items: flex-start; gap: 20px; padding: 24px; }
+    .balance-divider { width: 100%; height: 1px; }
+    .balance-amount { font-size: 32px; }
+    .balance-stats { flex-wrap: wrap; gap: 16px; }
+    .cc-item { flex-wrap: wrap; gap: 12px; }
+    .cc-item-stats { gap: 20px; }
+    .cc-item-bar { width: 100%; }
+    .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .accounts-mini-grid { grid-template-columns: 1fr; }
 }
 </style>
 {% endblock %}
@@ -583,8 +735,7 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Chart.js default styling
-    Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
+    Chart.defaults.font.family = "'Inter', sans-serif";
     Chart.defaults.color = '#6b7280';
     
     // Income vs Expense Chart
@@ -600,15 +751,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     label: 'Income',
                     data: chartData.income,
                     backgroundColor: '#10b981',
-                    borderRadius: 6,
-                    borderSkipped: false,
+                    borderRadius: 4,
                 },
                 {
                     label: 'Expenses',
                     data: chartData.expenses,
                     backgroundColor: '#f43f5e',
-                    borderRadius: 6,
-                    borderSkipped: false,
+                    borderRadius: 4,
                 }
             ]
         },
@@ -619,76 +768,55 @@ document.addEventListener('DOMContentLoaded', function() {
                 legend: {
                     position: 'top',
                     align: 'end',
-                    labels: {
-                        boxWidth: 8,
-                        boxHeight: 8,
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                        padding: 16,
-                        font: { size: 12 }
-                    }
+                    labels: { boxWidth: 8, usePointStyle: true, pointStyle: 'circle', padding: 16, font: { size: 11 } }
                 }
             },
             scales: {
-                x: {
-                    grid: { display: false },
+                x: { grid: { display: false }, border: { display: false } },
+                y: { 
+                    grid: { color: '#f3f4f6' }, 
                     border: { display: false },
-                    ticks: { font: { size: 12 } }
-                },
-                y: {
-                    grid: { color: '#f3f4f6' },
-                    border: { display: false },
-                    ticks: {
-                        font: { size: 11 },
-                        callback: function(value) {
-                            return '{{ currency_symbol }}' + (value/1000) + 'k';
-                        }
-                    }
+                    ticks: { callback: v => '{{ currency_symbol }}' + (v/1000) + 'k' }
                 }
             }
         }
     });
     
-    // Category Doughnut Chart - Using category colors from data
+    // Category Bars - Horizontal
     const categoryData = {{ category_data|safe }};
-    const ctx2 = document.getElementById('categoryChart').getContext('2d');
+    const container = document.getElementById('categoryBars');
+    const colors = categoryData.colors?.length ? categoryData.colors : ['#6366f1','#ec4899','#f97316','#22c55e','#eab308','#8b5cf6'];
     
-    // Use colors from category data if available, otherwise use defaults
-    const chartColors = categoryData.colors && categoryData.colors.length > 0 
-        ? categoryData.colors 
-        : ['#6366f1', '#ec4899', '#f97316', '#22c55e', '#eab308', '#8b5cf6', '#f43f5e', '#14b8a6', '#06b6d4', '#3b82f6'];
+    const total = categoryData.data.reduce((a, b) => a + b, 0);
     
-    new Chart(ctx2, {
-        type: 'doughnut',
-        data: {
-            labels: categoryData.labels,
-            datasets: [{
-                data: categoryData.data,
-                backgroundColor: chartColors.slice(0, categoryData.labels.length),
-                borderWidth: 0,
-                cutout: '65%'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: { display: false }
-            }
-        }
-    });
-    
-    // Build custom legend
-    const legendContainer = document.getElementById('categoryLegend');
-    categoryData.labels.forEach((label, index) => {
-        const item = document.createElement('div');
-        item.className = 'legend-item';
-        item.innerHTML = `
-            <span class="legend-dot" style="background: ${chartColors[index]}"></span>
-            <span>${label}</span>
-        `;
-        legendContainer.appendChild(item);
-    });
+    if (total === 0 || categoryData.labels[0] === 'No expenses') {
+        container.innerHTML = '<div class="category-bars-empty">No spending this month</div>';
+    } else {
+        categoryData.labels.forEach((label, i) => {
+            const amount = categoryData.data[i];
+            const percent = total > 0 ? Math.round((amount / total) * 100) : 0;
+            const color = colors[i % colors.length];
+            
+            const item = document.createElement('div');
+            item.className = 'category-bar-item';
+            item.innerHTML = `
+                <div class="category-bar-header">
+                    <span class="category-bar-name">
+                        <span class="category-bar-dot" style="background:${color}"></span>
+                        ${label}
+                    </span>
+                    <span class="category-bar-values">
+                        <span class="category-bar-amount">{{ currency_symbol }}${amount.toLocaleString()}</span>
+                        <span class="category-bar-percent">${percent}%</span>
+                    </span>
+                </div>
+                <div class="category-bar-track">
+                    <div class="category-bar-fill" style="width:${percent}%;background:${color}"></div>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+    }
 });
 </script>
 {% endblock %}
