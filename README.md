@@ -1,142 +1,245 @@
-# Personal Finance Tracker
+# Finance Tracker
 
-A full-featured Django web application for personal finance tracking with a beautiful dashboard, transaction management, and insightful charts.
+A modern, full-featured personal finance management application built with Django. Track your income, expenses, manage multiple accounts, and gain insights into your spending habits.
 
-![Dashboard Preview](docs/dashboard.png)
+![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
+![Django](https://img.shields.io/badge/Django-5.0+-green.svg)
+![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ## Features
 
-- **Dashboard** - Overview of total balance, savings, and spending with interactive charts
-- **Multi-Account Support** - Track Bank accounts, Digital wallets (eSewa, etc.), Cash, and Savings
-- **Transaction Management** - Record income and expenses with categories
-- **Categories & Subcategories** - Organize transactions with custom categories
-- **Bulk Import** - Import transactions from CSV files
-- **User Authentication** - Secure login with multi-user support
-- **Responsive Design** - Works on desktop, tablet, and mobile
-- **Charts & Visualization** - Income vs Expense charts, Category breakdowns
+### Dashboard
+- **Financial Overview**: View total balance, monthly income, expenses, and savings at a glance
+- **Interactive Charts**: Visualize income vs expenses over the last 6 months
+- **Spending Breakdown**: See spending by category with horizontal bar charts
+- **Quick Stats**: Track your financial health with real-time calculations
 
-## Tech Stack
+### Account Management
+- **Multiple Accounts**: Manage bank accounts, cash, e-wallets, and more
+- **Credit Cards**: Track credit limits, amount owed, and utilization percentage
+- **Custom Icons & Colors**: Personalize each account for easy identification
+- **Balance Tracking**: Automatic balance updates based on transactions
 
-- **Backend**: Django 5.x
-- **Database**: SQLite (development) / PostgreSQL (production)
-- **Frontend**: HTML, CSS, JavaScript (no framework)
-- **CSS Framework**: Bootstrap 5
-- **Charts**: Chart.js
-- **Icons**: Bootstrap Icons
+### Transactions
+- **Quick Entry**: Streamlined form for fast transaction logging
+- **Receipt Uploads**: Attach multiple photos/screenshots with automatic compression
+- **Bulk Import**: Import transactions from CSV files
+- **Smart Filtering**: Filter by date range, account, category, or search terms
+- **Transaction Templates**: Create templates for recurring transactions (rent, subscriptions, etc.)
 
-## Quick Start
+### Categories
+- **Pre-built Categories**: Common categories included out of the box
+- **Subcategories**: Organize with nested subcategories
+- **Income & Expense Types**: Separate categories for different transaction types
+- **Custom Icons & Colors**: Visual identification for each category
 
-### 1. Clone the repository
+### Quick Add Templates
+- **One-Click Transactions**: Save frequently used transaction details
+- **Custom Templates**: Create templates with pre-filled description, account, category
+- **Usage Tracking**: Most-used templates appear first
+- **Visual Icons**: Assign icons and colors to templates
+
+### User Settings
+- **Profile Management**: Update name and profile picture
+- **Currency Selection**: Choose from multiple currencies (NPR, USD, EUR, etc.)
+- **Secure Authentication**: Login, registration, and password management
+
+## Getting Started
+
+### Prerequisites
+- Python 3.10 or higher
+- pip (Python package manager)
+
+### Installation
+
+1. **Clone or extract the project**
+   ```bash
+   cd finance_tracker
+   ```
+
+2. **Create a virtual environment** (recommended)
+   ```bash
+   python -m venv venv
+   
+   # On macOS/Linux
+   source venv/bin/activate
+   
+   # On Windows
+   venv\Scripts\activate
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Run database migrations**
+   ```bash
+   python manage.py migrate
+   ```
+
+5. **Create a superuser** (optional, for admin access)
+   ```bash
+   python manage.py createsuperuser
+   ```
+
+6. **Start the development server**
+   ```bash
+   python manage.py runserver
+   ```
+
+7. **Open your browser**
+   Navigate to `http://127.0.0.1:8000`
+
+### Demo Data (Optional)
+
+To populate the app with sample data for testing:
 
 ```bash
-git clone <repository-url>
-cd finance_tracker
+python manage.py setup_demo_data
 ```
 
-### 2. Create virtual environment
-
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-### 3. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Run migrations
-
-```bash
-python manage.py migrate
-```
-
-### 5. Create a superuser (admin)
-
-```bash
-python manage.py createsuperuser
-```
-
-### 6. Run the development server
-
-```bash
-python manage.py runserver
-```
-
-### 7. Open in browser
-
-- **Main App**: http://127.0.0.1:8000/
-- **Admin Panel**: http://127.0.0.1:8000/admin/
-
-## Default Admin Credentials (for testing)
-
-- **Username**: admin
-- **Password**: admin123
+This creates a demo user with:
+- **Username**: `demo`
+- **Password**: `demo1234`
+- Sample accounts, categories, and transactions
 
 ## Project Structure
 
 ```
 finance_tracker/
 ├── apps/
-│   ├── accounts/       # User authentication & profiles
-│   ├── dashboard/      # Main dashboard & insights
-│   ├── wallets/        # Bank accounts, wallets, cash
-│   ├── transactions/   # Income/expense records
-│   └── categories/     # Spending categories
-├── config/             # Project settings
-├── static/             # CSS, JS, images
-├── templates/          # Global templates
-└── media/              # User uploads
+│   ├── accounts/          # User authentication & profiles
+│   ├── categories/        # Category & subcategory management
+│   ├── dashboard/         # Main dashboard & analytics
+│   ├── transactions/      # Transaction CRUD & templates
+│   └── wallets/           # Account/wallet management
+├── config/                # Django settings & URLs
+├── media/                 # User uploads (receipts, profiles)
+├── static/                # CSS, JS, images
+├── templates/             # Base templates & components
+├── manage.py
+└── requirements.txt
 ```
 
-## Key URLs
+## Tech Stack
 
-| URL | Description |
-|-----|-------------|
-| `/` | Dashboard |
-| `/accounts/login/` | Login |
-| `/accounts/register/` | Register |
-| `/accounts/profile/` | User profile |
-| `/wallets/` | Manage accounts |
-| `/transactions/` | View/add transactions |
-| `/categories/` | Manage categories |
+| Component | Technology |
+|-----------|------------|
+| Backend | Django 5.0+ |
+| Database | SQLite (default) |
+| Frontend | HTML5, CSS3, JavaScript |
+| CSS Framework | Bootstrap 5 |
+| Icons | Bootstrap Icons |
+| Charts | Chart.js |
+| Image Processing | Pillow |
 
-## CSV Import Format
+## Screenshots
 
-To bulk import transactions, create a CSV with these columns:
+### Dashboard
+- Total balance overview
+- Income vs Expenses chart
+- Spending by category
+- Recent transactions
 
-```csv
-date,description,amount,type,account,category,notes
-2024-01-15,Grocery Shopping,3000,debit,Cash,Food,Weekly groceries
-2024-01-14,Salary,50000,credit,Bank,Income,Monthly salary
+### Transaction Form
+- Compact, modern design
+- Expense/Income toggle
+- Collapsible notes & receipt sections
+- Drag & drop receipt upload
+
+### Accounts
+- Regular accounts with balance
+- Credit cards with utilization
+- Visual icons and colors
+
+## ⚙️ Configuration
+
+### Database
+By default, the app uses SQLite. To use PostgreSQL or MySQL, update `config/settings.py`:
+
+```python
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'finance_tracker',
+        'USER': 'your_user',
+        'PASSWORD': 'your_password',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
 ```
 
-## Customization
+### Media Files
+Uploaded receipts are stored in the `media/receipts/` directory. In production, configure proper media serving.
 
 ### Currency
-Users can set their preferred currency in Profile Settings. Supported currencies:
-- NPR (Nepali Rupee)
-- USD, EUR, GBP
-- INR, AUD, CAD
-- JPY, CNY
+Default currency is NPR (रू). Users can change their currency in Settings > Profile.
 
-### Categories
-Default category icons and colors can be customized when creating categories.
+Available currencies:
+- NPR (रू) - Nepalese Rupee
+- USD ($) - US Dollar
+- EUR (€) - Euro
+- GBP (£) - British Pound
+- INR (₹) - Indian Rupee
+- And more...
 
-## Production Deployment
+## Security Features
 
-1. Set `DEBUG = False` in settings.py
-2. Configure `ALLOWED_HOSTS`
-3. Set up PostgreSQL database
-4. Configure static files with `collectstatic`
-5. Use gunicorn or uwsgi as WSGI server
-6. Set up nginx as reverse proxy
+- CSRF protection on all forms
+- Password hashing with Django's default hasher
+- User-specific data isolation
+- Secure file upload handling
+- Session-based authentication
 
-## License
+## API Endpoints
 
-MIT License
+The app includes internal API endpoints for dynamic functionality:
+
+| Endpoint | Description |
+|----------|-------------|
+| `/categories/api/search/` | Search categories with autocomplete |
+| `/categories/api/subcategories/<id>/` | Get subcategories for a category |
 
 ## Contributing
 
-Pull requests are welcome!
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## Roadmap
+
+- [ ] Budget management & alerts
+- [ ] Recurring transactions automation
+- [ ] Data export (Excel, PDF reports)
+- [ ] Dark mode
+- [ ] Mobile app (React Native)
+- [ ] Bank account sync (Plaid integration)
+- [ ] Multi-currency support with conversion
+- [ ] Financial goals tracking
+
+## Known Issues
+
+- Receipt compression may fail for very large images (>10MB)
+- Chart.js animations may lag with large datasets
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [Django](https://www.djangoproject.com/) - The web framework used
+- [Bootstrap](https://getbootstrap.com/) - CSS framework
+- [Chart.js](https://www.chartjs.org/) - JavaScript charting library
+- [Bootstrap Icons](https://icons.getbootstrap.com/) - Icon library
+- [Pillow](https://pillow.readthedocs.io/) - Image processing
+
+---
+
+<p align="center">
+  Made with ❤️ for better financial management
+</p>
