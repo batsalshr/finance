@@ -1,164 +1,108 @@
 # Finance Tracker
 
-A modern, full-featured personal finance management application built with Django. Track your income, expenses, manage multiple accounts, and gain insights into your spending habits.
-
-![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
-![Django](https://img.shields.io/badge/Django-5.0+-green.svg)
-![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+A personal finance management application built with Django. Track income, expenses, manage multiple accounts, and gain insights into your spending habits.
 
 ## Features
 
 ### Dashboard
-- **Financial Overview**: View total balance, monthly income, expenses, and savings at a glance
-- **Interactive Charts**: Visualize income vs expenses over the last 6 months
-- **Spending Breakdown**: See spending by category with horizontal bar charts
-- **Quick Stats**: Track your financial health with real-time calculations
+- Financial overview with total balance, monthly income, expenses, and savings
+- Income vs expenses chart (last 6 months)
+- Spending breakdown by category
 
-### Account Management
-- **Multiple Accounts**: Manage bank accounts, cash, e-wallets, and more
-- **Credit Cards**: Track credit limits, amount owed, and utilization percentage
-- **Custom Icons & Colors**: Personalize each account for easy identification
-- **Balance Tracking**: Automatic balance updates based on transactions
+### Accounts
+- Multiple account types (bank, cash, e-wallet)
+- Credit card tracking with limits and utilization
+- Custom icons and colors
 
 ### Transactions
-- **Quick Entry**: Streamlined form for fast transaction logging
-- **Receipt Uploads**: Attach multiple photos/screenshots with automatic compression
-- **Bulk Import**: Import transactions from CSV files
-- **Smart Filtering**: Filter by date range, account, category, or search terms
-- **Transaction Templates**: Create templates for recurring transactions (rent, subscriptions, etc.)
+- Quick entry form with receipt uploads
+- Bulk import from CSV
+- Filtering by date, account, category, or search
+- Transaction templates for recurring entries
 
 ### Categories
-- **Pre-built Categories**: Common categories included out of the box
-- **Subcategories**: Organize with nested subcategories
-- **Income & Expense Types**: Separate categories for different transaction types
-- **Custom Icons & Colors**: Visual identification for each category
+- Pre-built categories included
+- Subcategory support
+- Separate income and expense types
+- Custom icons and colors
 
 ### Quick Add Templates
-- **One-Click Transactions**: Save frequently used transaction details
-- **Custom Templates**: Create templates with pre-filled description, account, category
-- **Usage Tracking**: Most-used templates appear first
-- **Visual Icons**: Assign icons and colors to templates
+- Save frequently used transaction details
+- One-click transaction creation
+- Usage tracking (most-used first)
 
-### User Settings
-- **Profile Management**: Update name and profile picture
-- **Currency Selection**: Choose from multiple currencies (NPR, USD, EUR, etc.)
-- **Secure Authentication**: Login, registration, and password management
-
-## Getting Started
+## Installation
 
 ### Prerequisites
-- Python 3.10 or higher
-- pip (Python package manager)
+- Python 3.10+
+- pip
 
-### Installation
+### Setup
 
-1. **Clone or extract the project**
-   ```bash
-   cd finance_tracker
-   ```
+```bash
+# Navigate to project
+cd finance_tracker
 
-2. **Create a virtual environment** (recommended)
-   ```bash
-   python -m venv venv
-   
-   # On macOS/Linux
-   source venv/bin/activate
-   
-   # On Windows
-   venv\Scripts\activate
-   ```
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+# Install dependencies
+pip install -r requirements.txt
 
-4. **Run database migrations**
-   ```bash
-   python manage.py migrate
-   ```
+# Run migrations
+python manage.py migrate
 
-5. **Create a superuser** (optional, for admin access)
-   ```bash
-   python manage.py createsuperuser
-   ```
+# Start server
+python manage.py runserver
+```
 
-6. **Start the development server**
-   ```bash
-   python manage.py runserver
-   ```
-
-7. **Open your browser**
-   Navigate to `http://127.0.0.1:8000`
+Open `http://127.0.0.1:8000` in your browser.
 
 ### Demo Data (Optional)
-
-To populate the app with sample data for testing:
 
 ```bash
 python manage.py setup_demo_data
 ```
 
-This creates a demo user with:
-- **Username**: `demo`
-- **Password**: `demo1234`
-- Sample accounts, categories, and transactions
+Creates a demo user:
+- Username: `demo`
+- Password: `demo1234`
 
 ## Project Structure
 
 ```
 finance_tracker/
 ├── apps/
-│   ├── accounts/          # User authentication & profiles
-│   ├── categories/        # Category & subcategory management
-│   ├── dashboard/         # Main dashboard & analytics
-│   ├── transactions/      # Transaction CRUD & templates
-│   └── wallets/           # Account/wallet management
-├── config/                # Django settings & URLs
-├── media/                 # User uploads (receipts, profiles)
-├── static/                # CSS, JS, images
-├── templates/             # Base templates & components
-├── manage.py
+│   ├── accounts/       # Authentication & profiles
+│   ├── categories/     # Category management
+│   ├── dashboard/      # Main dashboard
+│   ├── transactions/   # Transaction CRUD
+│   └── wallets/        # Account management
+├── config/             # Django settings
+├── media/              # User uploads
+├── static/             # CSS, JS
+├── templates/          # Base templates
 └── requirements.txt
 ```
 
 ## Tech Stack
 
-| Component | Technology |
-|-----------|------------|
-| Backend | Django 5.0+ |
-| Database | SQLite (default) |
-| Frontend | HTML5, CSS3, JavaScript |
-| CSS Framework | Bootstrap 5 |
-| Icons | Bootstrap Icons |
-| Charts | Chart.js |
-| Image Processing | Pillow |
+- **Backend:** Django 5.0+
+- **Database:** SQLite (default)
+- **Frontend:** HTML, CSS, JavaScript
+- **Charts:** Chart.js
+- **Icons:** Bootstrap Icons
+- **Images:** Pillow
 
-## Screenshots
-
-### Dashboard
-- Total balance overview
-- Income vs Expenses chart
-- Spending by category
-- Recent transactions
-
-### Transaction Form
-- Compact, modern design
-- Expense/Income toggle
-- Collapsible notes & receipt sections
-- Drag & drop receipt upload
-
-### Accounts
-- Regular accounts with balance
-- Credit cards with utilization
-- Visual icons and colors
-
-## ⚙️ Configuration
+## Configuration
 
 ### Database
-By default, the app uses SQLite. To use PostgreSQL or MySQL, update `config/settings.py`:
+
+Default is SQLite. For PostgreSQL:
 
 ```python
+# config/settings.py
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -171,72 +115,29 @@ DATABASES = {
 }
 ```
 
-### Media Files
-Uploaded receipts are stored in the `media/receipts/` directory. In production, configure proper media serving.
-
 ### Currency
-Default currency is NPR (रू). Users can change their currency in Settings > Profile.
 
-Available currencies:
-- NPR (रू) - Nepalese Rupee
-- USD ($) - US Dollar
-- EUR (€) - Euro
-- GBP (£) - British Pound
-- INR (₹) - Indian Rupee
-- And more...
+Default: NPR. Change in Settings > Profile.
 
-## Security Features
-
-- CSRF protection on all forms
-- Password hashing with Django's default hasher
-- User-specific data isolation
-- Secure file upload handling
-- Session-based authentication
+Available: NPR, USD, EUR, GBP, INR, and more.
 
 ## API Endpoints
 
-The app includes internal API endpoints for dynamic functionality:
-
 | Endpoint | Description |
 |----------|-------------|
-| `/categories/api/search/` | Search categories with autocomplete |
-| `/categories/api/subcategories/<id>/` | Get subcategories for a category |
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+| `/categories/api/search/` | Search categories |
+| `/categories/api/subcategories/<id>/` | Get subcategories |
 
 ## Roadmap
 
-- [ ] Budget management & alerts
-- [ ] Recurring transactions automation
-- [ ] Data export (Excel, PDF reports)
-- [ ] Dark mode
-- [ ] Mobile app (React Native)
-- [ ] Bank account sync (Plaid integration)
-- [ ] Multi-currency support with conversion
-- [ ] Financial goals tracking
-
-## Known Issues
-
-- Receipt compression may fail for very large images (>10MB)
-- Chart.js animations may lag with large datasets
+- Budget management
+- Recurring transactions
+- Data export (Excel, PDF)
+- Dark mode
+- Multi-currency conversion
+- Financial goals
+- Email reports
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- [Django](https://www.djangoproject.com/) - The web framework used
-- [Bootstrap](https://getbootstrap.com/) - CSS framework
-- [Chart.js](https://www.chartjs.org/) - JavaScript charting library
-- [Bootstrap Icons](https://icons.getbootstrap.com/) - Icon library
-- [Pillow](https://pillow.readthedocs.io/) - Image processing
-
----
-
+MIT License
