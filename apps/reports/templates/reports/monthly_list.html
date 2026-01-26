@@ -1,0 +1,398 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Monthly Reports - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="reports-page">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1>Monthly Reports</h1>
+            <p>Track your spending history over time</p>
+        </div>
+    </div>
+
+    <!-- All-Time Summary -->
+    <div class="summary-cards">
+        <div class="summary-card income">
+            <div class="summary-icon">
+                <i class="bi bi-arrow-down-circle"></i>
+            </div>
+            <div class="summary-info">
+                <span class="summary-label">All-Time Income</span>
+                <span class="summary-value">{{ currency_symbol }}{{ total_income|floatformat:0|intcomma }}</span>
+            </div>
+        </div>
+        <div class="summary-card expense">
+            <div class="summary-icon">
+                <i class="bi bi-arrow-up-circle"></i>
+            </div>
+            <div class="summary-info">
+                <span class="summary-label">All-Time Expenses</span>
+                <span class="summary-value">{{ currency_symbol }}{{ total_expenses|floatformat:0|intcomma }}</span>
+            </div>
+        </div>
+        <div class="summary-card savings">
+            <div class="summary-icon">
+                <i class="bi bi-piggy-bank"></i>
+            </div>
+            <div class="summary-info">
+                <span class="summary-label">Total Savings</span>
+                <span class="summary-value {% if total_savings < 0 %}negative{% endif %}">{{ currency_symbol }}{{ total_savings|floatformat:0|intcomma }}</span>
+            </div>
+        </div>
+        <div class="summary-card average">
+            <div class="summary-icon">
+                <i class="bi bi-graph-down"></i>
+            </div>
+            <div class="summary-info">
+                <span class="summary-label">Avg. Monthly Spending</span>
+                <span class="summary-value">{{ currency_symbol }}{{ avg_monthly_spending|floatformat:0|intcomma }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Reports List -->
+    <div class="reports-section">
+        <h2>Monthly History</h2>
+        
+        {% if reports %}
+        <div class="reports-list">
+            {% regroup reports by year as year_groups %}
+            {% for year_group in year_groups %}
+            <div class="year-group">
+                <h3 class="year-header">{{ year_group.grouper }}</h3>
+                <div class="months-grid">
+                    {% for report in year_group.list %}
+                    <a href="{% url 'reports:monthly_detail' report.pk %}" class="month-card">
+                        <div class="month-header">
+                            <span class="month-name">{{ report.month_name }}</span>
+                            <span class="month-year">{{ report.year }}</span>
+                        </div>
+                        <div class="month-stats">
+                            <div class="month-stat">
+                                <span class="stat-label">Income</span>
+                                <span class="stat-value income">{{ currency_symbol }}{{ report.total_income|floatformat:0|intcomma }}</span>
+                            </div>
+                            <div class="month-stat">
+                                <span class="stat-label">Expenses</span>
+                                <span class="stat-value expense">{{ currency_symbol }}{{ report.total_expenses|floatformat:0|intcomma }}</span>
+                            </div>
+                        </div>
+                        <div class="month-net {% if report.net_savings >= 0 %}positive{% else %}negative{% endif %}">
+                            <span class="net-label">Net</span>
+                            <span class="net-value">
+                                {% if report.net_savings >= 0 %}+{% endif %}{{ currency_symbol }}{{ report.net_savings|floatformat:0|intcomma }}
+                            </span>
+                        </div>
+                        {% if report.category_breakdown %}
+                        <div class="month-categories">
+                            {% for cat in report.category_breakdown|slice:":3" %}
+                            <span class="cat-dot" style="background: {{ cat.color }}" title="{{ cat.name }}"></span>
+                            {% endfor %}
+                            {% if report.category_breakdown|length > 3 %}
+                            <span class="cat-more">+{{ report.category_breakdown|length|add:"-3" }}</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-calendar-x"></i>
+            <h3>No reports yet</h3>
+            <p>Start adding transactions to generate monthly reports</p>
+            <a href="{% url 'transactions:create' %}" class="btn-primary">
+                <i class="bi bi-plus-lg"></i>
+                Add Transaction
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.reports-page {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    margin-bottom: 24px;
+}
+
+.page-header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.page-header p {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 4px 0 0 0;
+}
+
+/* Summary Cards */
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.summary-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.summary-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+
+.summary-card.income .summary-icon { background: #d1fae5; color: #059669; }
+.summary-card.expense .summary-icon { background: #fee2e2; color: #dc2626; }
+.summary-card.savings .summary-icon { background: #e0e7ff; color: #4f46e5; }
+.summary-card.average .summary-icon { background: #fef3c7; color: #d97706; }
+
+.summary-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.summary-label {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.summary-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.summary-value.negative {
+    color: #dc2626;
+}
+
+/* Reports Section */
+.reports-section {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+}
+
+.reports-section h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 20px 0;
+}
+
+/* Year Group */
+.year-group {
+    margin-bottom: 32px;
+}
+
+.year-group:last-child {
+    margin-bottom: 0;
+}
+
+.year-header {
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b7280;
+    margin: 0 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+/* Months Grid */
+.months-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.month-card {
+    background: #f9fafb;
+    border-radius: 14px;
+    padding: 18px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.month-card:hover {
+    background: #f3f4f6;
+    border-color: #e5e7eb;
+    transform: translateY(-2px);
+}
+
+.month-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.month-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.month-year {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.month-stats {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.month-stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-label {
+    font-size: 11px;
+    color: #9ca3af;
+    text-transform: uppercase;
+}
+
+.stat-value {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.stat-value.income { color: #059669; }
+.stat-value.expense { color: #dc2626; }
+
+.month-net {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.month-net.positive { color: #059669; }
+.month-net.negative { color: #dc2626; }
+
+.net-label {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.net-value {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.month-categories {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.cat-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.cat-more {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-state i {
+    font-size: 48px;
+    color: #d1d5db;
+    margin-bottom: 16px;
+}
+
+.empty-state h3 {
+    font-size: 18px;
+    color: #111827;
+    margin: 0 0 8px 0;
+}
+
+.empty-state p {
+    color: #6b7280;
+    margin: 0 0 20px 0;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #111827;
+    color: white;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.btn-primary:hover {
+    background: #1f2937;
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .summary-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .months-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .summary-cards {
+        grid-template-columns: 1fr;
+    }
+    .months-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .months-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

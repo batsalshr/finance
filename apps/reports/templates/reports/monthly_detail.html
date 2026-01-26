@@ -1,0 +1,504 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ report.month_name }} {{ report.year }} - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="report-detail-page">
+    <!-- Header -->
+    <div class="page-header">
+        <a href="{% url 'reports:monthly_list' %}" class="back-link">
+            <i class="bi bi-arrow-left"></i>
+            Back to Reports
+        </a>
+        <div class="header-title">
+            <h1>{{ report.month_name }} {{ report.year }}</h1>
+            <p>Monthly financial breakdown</p>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-row">
+        <div class="summary-card large income">
+            <div class="card-icon">
+                <i class="bi bi-arrow-down-left"></i>
+            </div>
+            <div class="card-info">
+                <span class="card-label">Total Income</span>
+                <span class="card-value">{{ currency_symbol }}{{ report.total_income|floatformat:0|intcomma }}</span>
+            </div>
+        </div>
+        <div class="summary-card large expense">
+            <div class="card-icon">
+                <i class="bi bi-arrow-up-right"></i>
+            </div>
+            <div class="card-info">
+                <span class="card-label">Total Expenses</span>
+                <span class="card-value">{{ currency_symbol }}{{ report.total_expenses|floatformat:0|intcomma }}</span>
+            </div>
+        </div>
+        <div class="summary-card large net {% if report.net_savings >= 0 %}positive{% else %}negative{% endif %}">
+            <div class="card-icon">
+                <i class="bi bi-{% if report.net_savings >= 0 %}graph-up-arrow{% else %}graph-down-arrow{% endif %}"></i>
+            </div>
+            <div class="card-info">
+                <span class="card-label">Net Savings</span>
+                <span class="card-value">
+                    {% if report.net_savings >= 0 %}+{% endif %}{{ currency_symbol }}{{ report.net_savings|floatformat:0|intcomma }}
+                </span>
+            </div>
+            {% if report.total_income > 0 %}
+            <span class="savings-rate">{{ report.savings_rate }}% saved</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <!-- Expense Breakdown -->
+        <div class="breakdown-card">
+            <h2>
+                <i class="bi bi-pie-chart"></i>
+                Expense Breakdown
+            </h2>
+            
+            {% if report.category_breakdown %}
+            <div class="category-list">
+                {% for cat in report.category_breakdown %}
+                <div class="category-item">
+                    <div class="category-info">
+                        <div class="category-icon" style="background: {{ cat.color }}20; color: {{ cat.color }}">
+                            <i class="{{ cat.icon }}"></i>
+                        </div>
+                        <div class="category-details">
+                            <span class="category-name">{{ cat.name }}</span>
+                            <span class="category-percent">
+                                {% widthratio cat.amount report.total_expenses 100 %}%
+                            </span>
+                        </div>
+                    </div>
+                    <span class="category-amount">{{ currency_symbol }}{{ cat.amount|floatformat:0|intcomma }}</span>
+                </div>
+                <div class="category-bar">
+                    <div class="category-bar-fill" style="width: {% widthratio cat.amount report.total_expenses 100 %}%; background: {{ cat.color }}"></div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-breakdown">
+                <i class="bi bi-inbox"></i>
+                <p>No expenses this month</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Income Breakdown -->
+        <div class="breakdown-card">
+            <h2>
+                <i class="bi bi-cash-stack"></i>
+                Income Sources
+            </h2>
+            
+            {% if report.income_breakdown %}
+            <div class="category-list">
+                {% for cat in report.income_breakdown %}
+                <div class="category-item">
+                    <div class="category-info">
+                        <div class="category-icon" style="background: {{ cat.color }}20; color: {{ cat.color }}">
+                            <i class="{{ cat.icon }}"></i>
+                        </div>
+                        <div class="category-details">
+                            <span class="category-name">{{ cat.name }}</span>
+                            <span class="category-percent">
+                                {% widthratio cat.amount report.total_income 100 %}%
+                            </span>
+                        </div>
+                    </div>
+                    <span class="category-amount income">{{ currency_symbol }}{{ cat.amount|floatformat:0|intcomma }}</span>
+                </div>
+                <div class="category-bar">
+                    <div class="category-bar-fill" style="width: {% widthratio cat.amount report.total_income 100 %}%; background: {{ cat.color }}"></div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-breakdown">
+                <i class="bi bi-inbox"></i>
+                <p>No income this month</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="transactions-section">
+        <h2>
+            <i class="bi bi-list-ul"></i>
+            Transactions
+        </h2>
+        
+        {% if transactions %}
+        <div class="transactions-list">
+            {% for txn in transactions %}
+            <a href="{% url 'transactions:detail' txn.pk %}" class="transaction-item">
+                <div class="txn-icon" style="background: {% if txn.category %}{{ txn.category.color }}15{% else %}#f3f4f6{% endif %}; color: {% if txn.category %}{{ txn.category.color }}{% else %}#6b7280{% endif %}">
+                    <i class="{% if txn.category %}{{ txn.category.icon }}{% else %}bi-receipt{% endif %}"></i>
+                </div>
+                <div class="txn-info">
+                    <span class="txn-desc">{{ txn.description }}</span>
+                    <span class="txn-meta">
+                        {{ txn.date|date:"d M" }} · {{ txn.account.name }}
+                    </span>
+                </div>
+                <span class="txn-amount {% if txn.is_credit %}credit{% endif %}">
+                    {% if txn.is_credit %}+{% else %}-{% endif %}{{ currency_symbol }}{{ txn.amount|floatformat:0|intcomma }}
+                </span>
+            </a>
+            {% endfor %}
+        </div>
+        <a href="{% url 'transactions:list' %}?month={{ report.month }}&year={{ report.year }}" class="view-all-link">
+            View all transactions <i class="bi bi-arrow-right"></i>
+        </a>
+        {% else %}
+        <div class="empty-breakdown">
+            <i class="bi bi-inbox"></i>
+            <p>No transactions this month</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.report-detail-page {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.page-header {
+    margin-bottom: 24px;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #6b7280;
+    text-decoration: none;
+    margin-bottom: 12px;
+}
+
+.back-link:hover {
+    color: #111827;
+}
+
+.header-title h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.header-title p {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 4px 0 0 0;
+}
+
+/* Summary Row */
+.summary-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.summary-card.large {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+}
+
+.card-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.summary-card.income .card-icon { background: #d1fae5; color: #059669; }
+.summary-card.expense .card-icon { background: #fee2e2; color: #dc2626; }
+.summary-card.net.positive .card-icon { background: #dbeafe; color: #2563eb; }
+.summary-card.net.negative .card-icon { background: #fef3c7; color: #d97706; }
+
+.card-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.card-label {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.card-value {
+    font-size: 26px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.summary-card.income .card-value { color: #059669; }
+.summary-card.expense .card-value { color: #dc2626; }
+.summary-card.net.positive .card-value { color: #059669; }
+.summary-card.net.negative .card-value { color: #dc2626; }
+
+.savings-rate {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: #d1fae5;
+    color: #059669;
+}
+
+.summary-card.net.negative .savings-rate {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* Content Grid */
+.content-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.breakdown-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.breakdown-card h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.breakdown-card h2 i {
+    color: #6b7280;
+}
+
+/* Category List */
+.category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.category-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.category-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.category-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.category-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.category-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+}
+
+.category-percent {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.category-amount {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.category-amount.income {
+    color: #059669;
+}
+
+.category-bar {
+    height: 6px;
+    background: #f3f4f6;
+    border-radius: 3px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.category-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+}
+
+.empty-breakdown {
+    text-align: center;
+    padding: 40px 20px;
+    color: #9ca3af;
+}
+
+.empty-breakdown i {
+    font-size: 32px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+/* Transactions Section */
+.transactions-section {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.transactions-section h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.transactions-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.transaction-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid #f3f4f6;
+    text-decoration: none;
+    color: inherit;
+}
+
+.transaction-item:last-child {
+    border-bottom: none;
+}
+
+.transaction-item:hover {
+    background: #f9fafb;
+    margin: 0 -12px;
+    padding: 14px 12px;
+    border-radius: 10px;
+}
+
+.txn-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.txn-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.txn-desc {
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.txn-meta {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.txn-amount {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.txn-amount.credit {
+    color: #059669;
+}
+
+.view-all-link {
+    display: block;
+    text-align: center;
+    padding: 14px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: #6b7280;
+    text-decoration: none;
+    border-top: 1px solid #f3f4f6;
+}
+
+.view-all-link:hover {
+    color: #111827;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .summary-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .summary-card.large {
+        padding: 20px;
+    }
+    
+    .card-value {
+        font-size: 22px;
+    }
+}
+</style>
+{% endblock %}

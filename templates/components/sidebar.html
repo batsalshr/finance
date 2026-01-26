@@ -46,6 +46,12 @@
                 <span>Categories</span>
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link {% if 'reports' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'reports:monthly_list' %}">
+                <i class="bi bi-bar-chart-line"></i>
+                <span>Reports</span>
+            </a>
+        </li>
     </ul>
     
     <div class="sidebar-footer">

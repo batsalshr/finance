@@ -20,6 +20,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
+        today = timezone.now().date()
         
         # Get all user accounts
         all_accounts = Account.objects.filter(user=user, is_active=True)
@@ -37,6 +38,21 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         # Available/Spendable = Total Balance - Savings (credit cards NOT factored in)
         current_balance = total_balance - savings_balance
         
+        # This month's spending and income
+        this_month_expenses = Transaction.objects.filter(
+            user=user,
+            transaction_type='debit',
+            date__year=today.year,
+            date__month=today.month
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        this_month_income = Transaction.objects.filter(
+            user=user,
+            transaction_type='credit',
+            date__year=today.year,
+            date__month=today.month
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
         # Recent transactions
         recent_transactions = Transaction.objects.filter(user=user).select_related(
             'account', 'category'
@@ -53,12 +69,15 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             'total_balance': total_balance,
             'savings_balance': savings_balance,
             'current_balance': current_balance,
+            'this_month_expenses': this_month_expenses,
+            'this_month_income': this_month_income,
             'recent_transactions': recent_transactions,
             'accounts': regular_accounts,  # Only regular accounts in accounts grid
             'credit_cards': credit_cards,  # Separate credit cards list
             'chart_data': json.dumps(chart_data),
             'category_data': json.dumps(category_data),
             'currency_symbol': user.profile.currency_symbol,
+            'current_month': today.strftime('%B'),
         })
         
         return context

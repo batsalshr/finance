@@ -17,30 +17,44 @@
         </a>
     </div>
 
-    <!-- Balance Card -->
+    <!-- Balance Card - 3 Column Layout -->
     <div class="balance-card">
-        <div class="balance-main">
+        <!-- Left: Available Balance -->
+        <div class="balance-section">
             <span class="balance-label">Available Balance</span>
             <h2 class="balance-amount">{{ currency_symbol }}{{ current_balance|floatformat:0|intcomma }}</h2>
-            <span class="balance-subtext">of {{ currency_symbol }}{{ total_balance|floatformat:0|intcomma }} total</span>
+            <span class="balance-subtext">
+                <i class="bi bi-piggy-bank"></i>
+                {{ currency_symbol }}{{ savings_balance|floatformat:0|intcomma }} in savings
+            </span>
         </div>
+        
         <div class="balance-divider"></div>
-        <div class="balance-stats">
-            <div class="stat-item">
-                <div class="stat-icon green"><i class="bi bi-wallet2"></i></div>
-                <div class="stat-info">
-                    <span class="stat-label">Total Balance</span>
-                    <span class="stat-value">{{ currency_symbol }}{{ total_balance|floatformat:0|intcomma }}</span>
-                </div>
+        
+        <!-- Middle: Total Balance -->
+        <div class="balance-section center">
+            <div class="stat-icon-lg green">
+                <i class="bi bi-wallet2"></i>
             </div>
-            <div class="stat-item">
-                <div class="stat-icon purple"><i class="bi bi-piggy-bank"></i></div>
-                <div class="stat-info">
-                    <span class="stat-label">Savings</span>
-                    <span class="stat-value">{{ currency_symbol }}{{ savings_balance|floatformat:0|intcomma }}</span>
-                </div>
+            <div class="stat-content">
+                <span class="stat-label-lg">Total Balance</span>
+                <span class="stat-value-lg">{{ currency_symbol }}{{ total_balance|floatformat:0|intcomma }}</span>
             </div>
         </div>
+        
+        <div class="balance-divider"></div>
+        
+        <!-- Right: This Month Spent -->
+        <a href="{% url 'reports:monthly_list' %}" class="balance-section right-link">
+            <div class="stat-icon-lg red">
+                <i class="bi bi-arrow-up-right"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-label-lg">{{ current_month }} Spent</span>
+                <span class="stat-value-lg expense">{{ currency_symbol }}{{ this_month_expenses|floatformat:0|intcomma }}</span>
+            </div>
+            <i class="bi bi-chevron-right link-arrow"></i>
+        </a>
     </div>
 
     <!-- Credit Cards - Dark Theme, Bigger Design -->
@@ -118,7 +132,7 @@
                 <a href="{% url 'wallets:create' %}"><i class="bi bi-plus"></i></a>
             </div>
             <div class="accounts-mini-grid">
-                {% for account in accounts|slice:":4" %}
+                {% for account in accounts %}
                 <a href="{% url 'wallets:detail' account.pk %}" class="account-mini">
                     <div class="account-mini-icon" style="background:{{ account.color }}15;color:{{ account.color }}">
                         <i class="{{ account.icon }}"></i>
@@ -137,7 +151,7 @@
                 </div>
                 {% endfor %}
                 
-                {% for card in credit_cards|slice:":2" %}
+                {% for card in credit_cards %}
                 <a href="{% url 'wallets:detail' card.pk %}" class="account-mini credit-card-mini">
                     <div class="account-mini-icon" style="background:{{ card.color }}15;color:{{ card.color }}">
                         <i class="{{ card.icon }}"></i>
@@ -221,7 +235,7 @@
     margin: 2px 0 0 0;
 }
 
-/* Balance Card */
+/* Balance Card - 3 Column Layout */
 .balance-card {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     border-radius: 16px;
@@ -233,10 +247,53 @@
     margin-bottom: 20px;
 }
 
-.balance-main { flex: 1; }
+.balance-section {
+    flex: 1;
+}
+
+.balance-section.center {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    justify-content: center;
+}
+
+.balance-section.right-link {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    justify-content: flex-end;
+    text-decoration: none;
+    color: inherit;
+    transition: opacity 0.2s;
+    position: relative;
+    padding-right: 24px;
+}
+
+.balance-section.right-link:hover {
+    opacity: 0.85;
+}
+
+.link-arrow {
+    position: absolute;
+    right: 0;
+    font-size: 16px;
+    opacity: 0.5;
+}
+
 .balance-label { font-size: 14px; opacity: 0.7; }
 .balance-amount { font-size: 40px; font-weight: 700; margin: 6px 0; }
-.balance-subtext { font-size: 14px; opacity: 0.5; }
+.balance-subtext { 
+    font-size: 13px; 
+    opacity: 0.6;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.balance-subtext i {
+    font-size: 14px;
+}
 
 .balance-divider {
     width: 1px;
@@ -244,30 +301,38 @@
     background: rgba(255,255,255,0.15);
 }
 
-.balance-stats { display: flex; gap: 28px; }
-
-.stat-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.stat-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+.stat-icon-lg {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 22px;
 }
 
-.stat-icon.green { background: rgba(16,185,129,0.2); color: #34d399; }
-.stat-icon.purple { background: rgba(139,92,246,0.2); color: #a78bfa; }
+.stat-icon-lg.green { background: rgba(16,185,129,0.2); color: #34d399; }
+.stat-icon-lg.purple { background: rgba(139,92,246,0.2); color: #a78bfa; }
+.stat-icon-lg.red { background: rgba(239,68,68,0.2); color: #f87171; }
 
-.stat-info { display: flex; flex-direction: column; }
-.stat-label { font-size: 12px; opacity: 0.6; }
-.stat-value { font-size: 18px; font-weight: 600; }
+.stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-label-lg { 
+    font-size: 13px; 
+    opacity: 0.6; 
+}
+
+.stat-value-lg { 
+    font-size: 24px; 
+    font-weight: 700; 
+}
+
+.stat-value-lg.expense {
+    color: #f87171;
+}
 
 /* Credit Cards Card - Dark Theme, Bigger Design */
 .credit-cards-card {
@@ -548,6 +613,8 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
+    max-height: 320px;
+    overflow-y: auto;
 }
 
 .account-mini {
@@ -723,13 +790,26 @@
 /* Responsive */
 @media (max-width: 1024px) {
     .grid-2 { grid-template-columns: 1fr; }
+    .balance-section.center,
+    .balance-section.right-link {
+        justify-content: flex-start;
+    }
 }
 
 @media (max-width: 768px) {
-    .balance-card { flex-direction: column; align-items: flex-start; gap: 20px; padding: 24px; }
+    .balance-card { flex-direction: column; align-items: stretch; gap: 20px; padding: 24px; }
     .balance-divider { width: 100%; height: 1px; }
     .balance-amount { font-size: 32px; }
-    .balance-stats { flex-wrap: wrap; gap: 16px; }
+    .balance-section.center,
+    .balance-section.right-link {
+        justify-content: flex-start;
+    }
+    .balance-section.right-link {
+        padding-right: 0;
+    }
+    .link-arrow {
+        display: none;
+    }
     .cc-item { flex-wrap: wrap; gap: 12px; }
     .cc-item-stats { gap: 20px; }
     .cc-item-bar { width: 100%; }

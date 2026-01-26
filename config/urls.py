@@ -13,6 +13,7 @@ urlpatterns = [
     path('wallets/', include('apps.wallets.urls', namespace='wallets')),
     path('transactions/', include('apps.transactions.urls', namespace='transactions')),
     path('categories/', include('apps.categories.urls', namespace='categories')),
+    path('reports/', include('apps.reports.urls', namespace='reports')),
 ]
 
 # Serve media files in development
