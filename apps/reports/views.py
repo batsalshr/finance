@@ -3,6 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView, View
 from django.http import JsonResponse
 from django.utils import timezone
+from django.db.models import Sum
 from decimal import Decimal
 
 from .models import MonthlyReport
@@ -21,32 +22,49 @@ class MonthlyReportsView(LoginRequiredMixin, ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['page_title'] = 'Monthly Reports'
+        context['page_title'] = 'Reports'
         
-        reports = self.get_queryset()
+        user = self.request.user
+        reports = list(self.get_queryset())
         
-        # Calculate all-time totals
-        total_income = sum(r.total_income for r in reports)
-        total_expenses = sum(r.total_expenses for r in reports)
-        total_savings = total_income - total_expenses
+        # Calculate all-time totals directly from transactions for accuracy
+        from apps.transactions.models import Transaction
+        
+        all_time_income = Transaction.objects.filter(
+            user=user, transaction_type='credit'
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        all_time_expenses = Transaction.objects.filter(
+            user=user, transaction_type='debit'
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        all_time_savings = all_time_income - all_time_expenses
         
         # Get current month report
         today = timezone.now().date()
-        current_report = reports.filter(year=today.year, month=today.month).first()
+        current_report = next((r for r in reports if r.year == today.year and r.month == today.month), None)
         
-        # Calculate average monthly spending
-        if reports.count() > 0:
-            avg_monthly_spending = total_expenses / reports.count()
+        # Calculate average monthly spending (only from months with activity)
+        months_with_expenses = [r for r in reports if r.total_expenses > 0]
+        if months_with_expenses:
+            avg_monthly_spending = sum(r.total_expenses for r in months_with_expenses) / len(months_with_expenses)
         else:
             avg_monthly_spending = Decimal('0')
         
+        # Get total transaction count
+        total_transactions = Transaction.objects.filter(user=user).count()
+        
         context.update({
-            'total_income': total_income,
-            'total_expenses': total_expenses,
-            'total_savings': total_savings,
+            'all_time_income': all_time_income,
+            'all_time_expenses': all_time_expenses,
+            'all_time_savings': all_time_savings,
             'avg_monthly_spending': avg_monthly_spending,
             'current_report': current_report,
-            'currency_symbol': self.request.user.profile.currency_symbol,
+            'total_transactions': total_transactions,
+            'total_months': len(reports),
+            'currency_symbol': user.profile.currency_symbol,
+            'current_month': today.strftime('%B'),
+            'current_year': today.year,
         })
         
         return context

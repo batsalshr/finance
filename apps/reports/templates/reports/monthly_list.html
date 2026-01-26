@@ -1,112 +1,125 @@
 {% extends 'base.html' %}
 {% load humanize %}
 
-{% block title %}Monthly Reports - Finance Tracker{% endblock %}
+{% block title %}Reports - Finance Tracker{% endblock %}
 
 {% block content %}
 <div class="reports-page">
     <!-- Header -->
     <div class="page-header">
         <div>
-            <h1>Monthly Reports</h1>
-            <p>Track your spending history over time</p>
+            <h1>Reports</h1>
+            <p>Your financial overview and history</p>
         </div>
     </div>
 
-    <!-- All-Time Summary -->
-    <div class="summary-cards">
-        <div class="summary-card income">
-            <div class="summary-icon">
-                <i class="bi bi-arrow-down-circle"></i>
+    <!-- Overview Section -->
+    <div class="overview-section">
+        <div class="overview-card main">
+            <div class="overview-header">
+                <span class="overview-label">All-Time Net</span>
+                <span class="overview-badge {% if all_time_savings >= 0 %}positive{% else %}negative{% endif %}">
+                    {% if all_time_savings >= 0 %}Surplus{% else %}Deficit{% endif %}
+                </span>
             </div>
-            <div class="summary-info">
-                <span class="summary-label">All-Time Income</span>
-                <span class="summary-value">{{ currency_symbol }}{{ total_income|floatformat:0|intcomma }}</span>
+            <div class="overview-value {% if all_time_savings < 0 %}negative{% endif %}">
+                {% if all_time_savings >= 0 %}+{% endif %}{{ currency_symbol }}{{ all_time_savings|floatformat:0|intcomma }}
             </div>
-        </div>
-        <div class="summary-card expense">
-            <div class="summary-icon">
-                <i class="bi bi-arrow-up-circle"></i>
-            </div>
-            <div class="summary-info">
-                <span class="summary-label">All-Time Expenses</span>
-                <span class="summary-value">{{ currency_symbol }}{{ total_expenses|floatformat:0|intcomma }}</span>
-            </div>
-        </div>
-        <div class="summary-card savings">
-            <div class="summary-icon">
-                <i class="bi bi-piggy-bank"></i>
-            </div>
-            <div class="summary-info">
-                <span class="summary-label">Total Savings</span>
-                <span class="summary-value {% if total_savings < 0 %}negative{% endif %}">{{ currency_symbol }}{{ total_savings|floatformat:0|intcomma }}</span>
-            </div>
-        </div>
-        <div class="summary-card average">
-            <div class="summary-icon">
-                <i class="bi bi-graph-down"></i>
-            </div>
-            <div class="summary-info">
-                <span class="summary-label">Avg. Monthly Spending</span>
-                <span class="summary-value">{{ currency_symbol }}{{ avg_monthly_spending|floatformat:0|intcomma }}</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Monthly Reports List -->
-    <div class="reports-section">
-        <h2>Monthly History</h2>
-        
-        {% if reports %}
-        <div class="reports-list">
-            {% regroup reports by year as year_groups %}
-            {% for year_group in year_groups %}
-            <div class="year-group">
-                <h3 class="year-header">{{ year_group.grouper }}</h3>
-                <div class="months-grid">
-                    {% for report in year_group.list %}
-                    <a href="{% url 'reports:monthly_detail' report.pk %}" class="month-card">
-                        <div class="month-header">
-                            <span class="month-name">{{ report.month_name }}</span>
-                            <span class="month-year">{{ report.year }}</span>
-                        </div>
-                        <div class="month-stats">
-                            <div class="month-stat">
-                                <span class="stat-label">Income</span>
-                                <span class="stat-value income">{{ currency_symbol }}{{ report.total_income|floatformat:0|intcomma }}</span>
-                            </div>
-                            <div class="month-stat">
-                                <span class="stat-label">Expenses</span>
-                                <span class="stat-value expense">{{ currency_symbol }}{{ report.total_expenses|floatformat:0|intcomma }}</span>
-                            </div>
-                        </div>
-                        <div class="month-net {% if report.net_savings >= 0 %}positive{% else %}negative{% endif %}">
-                            <span class="net-label">Net</span>
-                            <span class="net-value">
-                                {% if report.net_savings >= 0 %}+{% endif %}{{ currency_symbol }}{{ report.net_savings|floatformat:0|intcomma }}
-                            </span>
-                        </div>
-                        {% if report.category_breakdown %}
-                        <div class="month-categories">
-                            {% for cat in report.category_breakdown|slice:":3" %}
-                            <span class="cat-dot" style="background: {{ cat.color }}" title="{{ cat.name }}"></span>
-                            {% endfor %}
-                            {% if report.category_breakdown|length > 3 %}
-                            <span class="cat-more">+{{ report.category_breakdown|length|add:"-3" }}</span>
-                            {% endif %}
-                        </div>
-                        {% endif %}
-                    </a>
-                    {% endfor %}
+            <div class="overview-breakdown">
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Total Income</span>
+                    <span class="breakdown-value income">{{ currency_symbol }}{{ all_time_income|floatformat:0|intcomma }}</span>
+                </div>
+                <div class="breakdown-divider"></div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Total Expenses</span>
+                    <span class="breakdown-value expense">{{ currency_symbol }}{{ all_time_expenses|floatformat:0|intcomma }}</span>
                 </div>
             </div>
-            {% endfor %}
         </div>
+        
+        <div class="overview-stats">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ total_months }}</span>
+                    <span class="stat-label">Months Tracked</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="bi bi-receipt"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ total_transactions }}</span>
+                    <span class="stat-label">Transactions</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange">
+                    <i class="bi bi-graph-down"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ currency_symbol }}{{ avg_monthly_spending|floatformat:0|intcomma }}</span>
+                    <span class="stat-label">Avg. Monthly Spend</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly History -->
+    <div class="history-section">
+        <div class="section-header">
+            <h2>Monthly History</h2>
+        </div>
+        
+        {% if reports %}
+        {% regroup reports by year as year_groups %}
+        {% for year_group in year_groups %}
+        <div class="year-group">
+            <div class="year-label">{{ year_group.grouper }}</div>
+            <div class="months-list">
+                {% for report in year_group.list %}
+                <a href="{% url 'reports:monthly_detail' report.pk %}" class="month-row">
+                    <div class="month-left">
+                        <div class="month-icon" style="background: {% if report.net_savings >= 0 %}#d1fae5{% else %}#fee2e2{% endif %}; color: {% if report.net_savings >= 0 %}#059669{% else %}#dc2626{% endif %};">
+                            <i class="bi bi-{% if report.net_savings >= 0 %}arrow-up{% else %}arrow-down{% endif %}"></i>
+                        </div>
+                        <div class="month-info">
+                            <span class="month-name">{{ report.month_name }}</span>
+                            <span class="month-meta">{{ report.category_breakdown|length }} categories</span>
+                        </div>
+                    </div>
+                    <div class="month-center">
+                        <div class="month-stat">
+                            <span class="stat-amount income">+{{ currency_symbol }}{{ report.total_income|floatformat:0|intcomma }}</span>
+                            <span class="stat-type">Income</span>
+                        </div>
+                        <div class="month-stat">
+                            <span class="stat-amount expense">-{{ currency_symbol }}{{ report.total_expenses|floatformat:0|intcomma }}</span>
+                            <span class="stat-type">Expenses</span>
+                        </div>
+                    </div>
+                    <div class="month-right">
+                        <span class="net-amount {% if report.net_savings >= 0 %}positive{% else %}negative{% endif %}">
+                            {% if report.net_savings >= 0 %}+{% endif %}{{ currency_symbol }}{{ report.net_savings|floatformat:0|intcomma }}
+                        </span>
+                        <i class="bi bi-chevron-right"></i>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
         {% else %}
         <div class="empty-state">
-            <i class="bi bi-calendar-x"></i>
+            <div class="empty-icon">
+                <i class="bi bi-bar-chart"></i>
+            </div>
             <h3>No reports yet</h3>
-            <p>Start adding transactions to generate monthly reports</p>
+            <p>Start adding transactions to see your monthly reports</p>
             <a href="{% url 'transactions:create' %}" class="btn-primary">
                 <i class="bi bi-plus-lg"></i>
                 Add Transaction
@@ -118,12 +131,12 @@
 
 <style>
 .reports-page {
-    max-width: 1200px;
+    max-width: 900px;
     margin: 0 auto;
 }
 
 .page-header {
-    margin-bottom: 24px;
+    margin-bottom: 28px;
 }
 
 .page-header h1 {
@@ -139,195 +152,275 @@
     margin: 4px 0 0 0;
 }
 
-/* Summary Cards */
-.summary-cards {
+/* Overview Section */
+.overview-section {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
     margin-bottom: 32px;
 }
 
-.summary-card {
-    background: white;
-    border-radius: 16px;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
+.overview-card.main {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 20px;
+    padding: 28px;
+    color: white;
 }
 
-.summary-icon {
-    width: 50px;
-    height: 50px;
+.overview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.overview-label {
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.overview-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+}
+
+.overview-badge.positive {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+
+.overview-badge.negative {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+
+.overview-value {
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 24px;
+}
+
+.overview-value.negative {
+    color: #f87171;
+}
+
+.overview-breakdown {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.breakdown-item {
+    flex: 1;
+}
+
+.breakdown-label {
+    display: block;
+    font-size: 12px;
+    opacity: 0.6;
+    margin-bottom: 4px;
+}
+
+.breakdown-value {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.breakdown-value.income { color: #34d399; }
+.breakdown-value.expense { color: #f87171; }
+
+.breakdown-divider {
+    width: 1px;
+    height: 40px;
+    background: rgba(255,255,255,0.15);
+}
+
+/* Stats Grid */
+.overview-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.stat-icon {
+    width: 44px;
+    height: 44px;
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
+    font-size: 18px;
 }
 
-.summary-card.income .summary-icon { background: #d1fae5; color: #059669; }
-.summary-card.expense .summary-icon { background: #fee2e2; color: #dc2626; }
-.summary-card.savings .summary-icon { background: #e0e7ff; color: #4f46e5; }
-.summary-card.average .summary-icon { background: #fef3c7; color: #d97706; }
+.stat-icon.blue { background: #dbeafe; color: #2563eb; }
+.stat-icon.purple { background: #ede9fe; color: #7c3aed; }
+.stat-icon.orange { background: #ffedd5; color: #ea580c; }
 
-.summary-info {
+.stat-info {
     display: flex;
     flex-direction: column;
 }
 
-.summary-label {
-    font-size: 13px;
-    color: #6b7280;
-}
-
-.summary-value {
-    font-size: 22px;
+.stat-info .stat-value {
+    font-size: 20px;
     font-weight: 700;
     color: #111827;
 }
 
-.summary-value.negative {
-    color: #dc2626;
+.stat-info .stat-label {
+    font-size: 13px;
+    color: #6b7280;
 }
 
-/* Reports Section */
-.reports-section {
+/* History Section */
+.history-section {
     background: white;
     border-radius: 20px;
     padding: 24px;
 }
 
-.reports-section h2 {
+.section-header {
+    margin-bottom: 20px;
+}
+
+.section-header h2 {
     font-size: 18px;
     font-weight: 600;
     color: #111827;
-    margin: 0 0 20px 0;
+    margin: 0;
 }
 
 /* Year Group */
 .year-group {
-    margin-bottom: 32px;
+    margin-bottom: 24px;
 }
 
 .year-group:last-child {
     margin-bottom: 0;
 }
 
-.year-header {
-    font-size: 14px;
+.year-label {
+    font-size: 13px;
     font-weight: 600;
-    color: #6b7280;
-    margin: 0 0 16px 0;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #f3f4f6;
+    color: #9ca3af;
+    margin-bottom: 12px;
+    padding-left: 4px;
 }
 
-/* Months Grid */
-.months-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
+/* Month Row */
+.months-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.month-card {
+.month-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
     background: #f9fafb;
     border-radius: 14px;
-    padding: 18px;
     text-decoration: none;
     color: inherit;
     transition: all 0.2s;
-    border: 1px solid transparent;
 }
 
-.month-card:hover {
+.month-row:hover {
     background: #f3f4f6;
-    border-color: #e5e7eb;
-    transform: translateY(-2px);
+    transform: translateX(4px);
 }
 
-.month-header {
+.month-left {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 14px;
+    gap: 14px;
+    min-width: 180px;
+}
+
+.month-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.month-info {
+    display: flex;
+    flex-direction: column;
 }
 
 .month-name {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     color: #111827;
 }
 
-.month-year {
+.month-meta {
     font-size: 12px;
     color: #9ca3af;
 }
 
-.month-stats {
+.month-center {
     display: flex;
-    gap: 16px;
-    margin-bottom: 12px;
+    gap: 32px;
 }
 
 .month-stat {
     display: flex;
     flex-direction: column;
+    align-items: flex-end;
 }
 
-.stat-label {
-    font-size: 11px;
-    color: #9ca3af;
-    text-transform: uppercase;
-}
-
-.stat-value {
-    font-size: 14px;
+.stat-amount {
+    font-size: 15px;
     font-weight: 600;
 }
 
-.stat-value.income { color: #059669; }
-.stat-value.expense { color: #dc2626; }
+.stat-amount.income { color: #059669; }
+.stat-amount.expense { color: #6b7280; }
 
-.month-net {
+.stat-type {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+.month-right {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding-top: 12px;
-    border-top: 1px solid #e5e7eb;
+    gap: 12px;
+    min-width: 120px;
+    justify-content: flex-end;
 }
 
-.month-net.positive { color: #059669; }
-.month-net.negative { color: #dc2626; }
-
-.net-label {
-    font-size: 12px;
-    opacity: 0.7;
-}
-
-.net-value {
-    font-size: 15px;
+.net-amount {
+    font-size: 16px;
     font-weight: 700;
 }
 
-.month-categories {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #e5e7eb;
-}
+.net-amount.positive { color: #059669; }
+.net-amount.negative { color: #dc2626; }
 
-.cat-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-}
-
-.cat-more {
-    font-size: 11px;
-    color: #9ca3af;
+.month-right i {
+    color: #d1d5db;
+    font-size: 16px;
 }
 
 /* Empty State */
@@ -336,10 +429,20 @@
     padding: 60px 20px;
 }
 
-.empty-state i {
-    font-size: 48px;
-    color: #d1d5db;
-    margin-bottom: 16px;
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    background: #f3f4f6;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.empty-icon i {
+    font-size: 32px;
+    color: #9ca3af;
 }
 
 .empty-state h3 {
@@ -350,19 +453,20 @@
 
 .empty-state p {
     color: #6b7280;
-    margin: 0 0 20px 0;
+    margin: 0 0 24px 0;
 }
 
 .btn-primary {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 12px 20px;
+    padding: 12px 24px;
     background: #111827;
     color: white;
-    border-radius: 10px;
+    border-radius: 12px;
     text-decoration: none;
     font-weight: 500;
+    transition: background 0.2s;
 }
 
 .btn-primary:hover {
@@ -371,27 +475,47 @@
 }
 
 /* Responsive */
-@media (max-width: 1024px) {
-    .summary-cards {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .months-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
 @media (max-width: 768px) {
-    .summary-cards {
+    .overview-section {
         grid-template-columns: 1fr;
     }
-    .months-grid {
-        grid-template-columns: repeat(2, 1fr);
+    
+    .overview-stats {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .stat-card {
+        flex: 1;
+        min-width: calc(50% - 6px);
+    }
+    
+    .month-row {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .month-left {
+        min-width: 100%;
+    }
+    
+    .month-center {
+        flex: 1;
+        gap: 20px;
+    }
+    
+    .month-right {
+        min-width: auto;
     }
 }
 
 @media (max-width: 480px) {
-    .months-grid {
-        grid-template-columns: 1fr;
+    .stat-card {
+        min-width: 100%;
+    }
+    
+    .overview-value {
+        font-size: 28px;
     }
 }
 </style>
