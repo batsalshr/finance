@@ -232,3 +232,11 @@ class TransactionReceipt(models.Model):
             return f"{size / 1024:.1f} KB"
         else:
             return f"{size / (1024 * 1024):.1f} MB"
+    
+    @property
+    def file_exists(self):
+        """Check if the actual file exists on disk"""
+        try:
+            return self.image and self.image.storage.exists(self.image.name)
+        except:
+            return False

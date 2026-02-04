@@ -1,0 +1,2 @@
+# This file ensures the receipts folder exists in git
+# Actual receipt images are ignored via .gitignore

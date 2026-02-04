@@ -1,0 +1,2 @@
+# This file ensures the profiles folder exists in git
+# Actual profile images are ignored via .gitignore
