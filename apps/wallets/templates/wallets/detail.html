@@ -39,6 +39,32 @@
             </div>
         </div>
         {% endif %}
+        
+        {% if account.is_credit_card %}
+        <div class="cc-actions">
+            <!-- Due Date Badge -->
+            {% if account.billing_due_date %}
+            <div class="due-badge {% if account.is_overdue %}overdue{% elif account.due_status == 'due_soon' %}due-soon{% else %}ok{% endif %}">
+                <i class="bi bi-calendar-event"></i>
+                {% if account.is_overdue %}
+                    <span>Overdue by {{ account.days_overdue }} day{{ account.days_overdue|pluralize }}</span>
+                {% elif account.days_until_due == 0 %}
+                    <span>Due today!</span>
+                {% else %}
+                    <span>Due in {{ account.days_until_due }} day{{ account.days_until_due|pluralize }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Pay Now Button -->
+            {% if account.amount_owed > 0 %}
+            <a href="{% url 'wallets:cc_payment' account.pk %}" class="pay-btn">
+                <i class="bi bi-credit-card-2-front"></i>
+                Pay Now
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
     
     <!-- Stats Row -->
@@ -62,7 +88,6 @@
                 <span class="stat-value">{{ currency_symbol }}{{ account.actual_balance|floatformat:0|intcomma }}</span>
             </div>
         </div>
-        {% endif %}
         <div class="stat-card">
             <div class="stat-icon income">
                 <i class="bi bi-arrow-down-circle"></i>
@@ -81,12 +106,59 @@
                 <span class="stat-value red">{{ currency_symbol }}{{ account.total_debits|floatformat:0|intcomma }}</span>
             </div>
         </div>
+        {% else %}
+        <!-- Credit Card specific stats -->
+        <div class="stat-card">
+            <div class="stat-icon cc-payments">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-label">Total Payments</span>
+                <span class="stat-value green">{{ currency_symbol }}{{ account.total_credits|floatformat:0|intcomma }}</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon cc-charges">
+                <i class="bi bi-cart"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-label">Total Charges</span>
+                <span class="stat-value red">{{ currency_symbol }}{{ account.total_debits|floatformat:0|intcomma }}</span>
+            </div>
+        </div>
+        {% endif %}
     </div>
+    
+    {% if account.is_credit_card and cc_payments %}
+    <!-- Recent Payments Section -->
+    <div class="payments-section">
+        <div class="section-header">
+            <h2>Recent Payments</h2>
+            <a href="{% url 'wallets:cc_payment_history' account.pk %}" class="view-all-link">
+                View all <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+        <div class="payment-list">
+            {% for payment in cc_payments|slice:":3" %}
+            <div class="payment-row">
+                <div class="payment-icon {% if payment.payment_type == 'full' %}full{% endif %}">
+                    <i class="bi bi-check-lg"></i>
+                </div>
+                <div class="payment-details">
+                    <span class="payment-type">{{ payment.get_payment_type_display }}</span>
+                    <span class="payment-date">{{ payment.payment_date|date:"d M Y" }} · {{ payment.source_account.name }}</span>
+                </div>
+                <span class="payment-amount">{{ currency_symbol }}{{ payment.amount|floatformat:0|intcomma }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
     
     <!-- Recent Transactions -->
     <div class="transactions-section">
         <div class="section-header">
-            <h2>Recent Transactions</h2>
+            <h2>Recent {% if account.is_credit_card %}Charges{% else %}Transactions{% endif %}</h2>
             <a href="{% url 'transactions:create' %}?account={{ account.pk }}" class="add-btn">
                 <i class="bi bi-plus-lg"></i>
                 Add
@@ -168,14 +240,8 @@
     backdrop-filter: blur(4px);
 }
 
-.back-btn {
-    left: 16px;
-}
-
-.edit-btn {
-    right: 16px;
-}
-
+.back-btn { left: 16px; }
+.edit-btn { right: 16px; }
 .back-btn:hover, .edit-btn:hover {
     background: rgba(255,255,255,0.3);
     color: white;
@@ -248,6 +314,62 @@
     opacity: 0.9;
 }
 
+/* CC Actions */
+.cc-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.due-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.due-badge.overdue {
+    background: rgba(239, 68, 68, 0.3);
+    animation: pulse 2s infinite;
+}
+
+.due-badge.due-soon {
+    background: rgba(251, 191, 36, 0.3);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.pay-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: white;
+    color: #111827;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+    margin-left: auto;
+}
+
+.pay-btn:hover {
+    background: #f3f4f6;
+    color: #111827;
+    transform: translateY(-1px);
+}
+
 /* Stats Row */
 .stats-row {
     display: grid;
@@ -275,49 +397,112 @@
     font-size: 20px;
 }
 
-.stat-icon.savings {
-    background: #dbeafe;
-    color: #2563eb;
-}
+.stat-icon.savings { background: #dbeafe; color: #2563eb; }
+.stat-icon.spendable { background: #f3e8ff; color: #9333ea; }
+.stat-icon.income, .stat-icon.cc-payments { background: #d1fae5; color: #059669; }
+.stat-icon.expense, .stat-icon.cc-charges { background: #fee2e2; color: #dc2626; }
 
-.stat-icon.spendable {
-    background: #f3e8ff;
-    color: #9333ea;
-}
-
-.stat-icon.income {
-    background: #d1fae5;
-    color: #059669;
-}
-
-.stat-icon.expense {
-    background: #fee2e2;
-    color: #dc2626;
-}
-
-.stat-content {
-    flex: 1;
-}
-
+.stat-content { flex: 1; }
 .stat-label {
     display: block;
     font-size: 12px;
     color: #6b7280;
     margin-bottom: 2px;
 }
-
 .stat-value {
     font-size: 18px;
     font-weight: 700;
     color: #111827;
 }
+.stat-value.green { color: #059669; }
+.stat-value.red { color: #dc2626; }
 
-.stat-value.green {
+/* Payments Section */
+.payments-section {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.payments-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.payments-section h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.view-all-link {
+    font-size: 13px;
+    color: #6b7280;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.view-all-link:hover { color: #111827; }
+
+.payment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.payment-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 10px;
+}
+
+.payment-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #dbeafe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.payment-icon.full {
+    background: #d1fae5;
     color: #059669;
 }
 
-.stat-value.red {
-    color: #dc2626;
+.payment-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.payment-type {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.payment-date {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.payment-amount {
+    font-size: 15px;
+    font-weight: 700;
+    color: #059669;
 }
 
 /* Transactions Section */
@@ -418,13 +603,8 @@
     font-weight: 700;
 }
 
-.txn-amount.expense {
-    color: #111827;
-}
-
-.txn-amount.income {
-    color: #059669;
-}
+.txn-amount.expense { color: #111827; }
+.txn-amount.income { color: #059669; }
 
 /* Empty State */
 .empty-state {
@@ -462,21 +642,12 @@
 
 /* Responsive */
 @media (max-width: 500px) {
-    .wallet-hero {
-        padding: 20px;
-    }
-    
-    .wallet-name {
-        font-size: 20px;
-    }
-    
-    .balance-amount {
-        font-size: 28px;
-    }
-    
-    .stats-row {
-        grid-template-columns: 1fr;
-    }
+    .wallet-hero { padding: 20px; }
+    .wallet-name { font-size: 20px; }
+    .balance-amount { font-size: 28px; }
+    .stats-row { grid-template-columns: 1fr; }
+    .cc-actions { flex-direction: column; align-items: stretch; }
+    .pay-btn { margin-left: 0; justify-content: center; }
 }
 </style>
 {% endblock %}

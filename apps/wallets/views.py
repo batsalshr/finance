@@ -1,11 +1,12 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from django.urls import reverse_lazy
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, View
+from django.urls import reverse_lazy, reverse
 from django.contrib import messages
+from django.http import JsonResponse
 
-from .models import Account
-from .forms import AccountForm
+from .models import Account, CreditCardPayment
+from .forms import AccountForm, CreditCardPaymentForm
 
 
 class AccountListView(LoginRequiredMixin, ListView):
@@ -56,6 +57,16 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
         context['transactions'] = self.object.transactions.all()[:20]
         context['currency_symbol'] = self.request.user.profile.currency_symbol
         context['page_title'] = self.object.name
+        
+        # For credit cards, add payment history
+        if self.object.is_credit_card:
+            context['cc_payments'] = self.object.cc_payments.all()[:10]
+            # Get source accounts for payment form
+            context['source_accounts'] = Account.objects.filter(
+                user=self.request.user,
+                is_active=True
+            ).exclude(account_type='credit')
+        
         return context
 
 
@@ -113,3 +124,66 @@ class AccountDeleteView(LoginRequiredMixin, DeleteView):
     def form_valid(self, form):
         messages.success(self.request, f'Account "{self.object.name}" deleted successfully!')
         return super().form_valid(form)
+
+
+class CreditCardPaymentView(LoginRequiredMixin, CreateView):
+    """Make a credit card payment"""
+    model = CreditCardPayment
+    form_class = CreditCardPaymentForm
+    template_name = 'wallets/cc_payment.html'
+    
+    def get_credit_card(self):
+        return get_object_or_404(
+            Account, 
+            pk=self.kwargs['pk'], 
+            user=self.request.user,
+            account_type='credit'
+        )
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        kwargs['credit_card'] = self.get_credit_card()
+        return kwargs
+    
+    def form_valid(self, form):
+        form.instance.credit_card = self.get_credit_card()
+        messages.success(self.request, f'Payment of {form.instance.amount} recorded successfully!')
+        response = super().form_valid(form)
+        return response
+    
+    def get_success_url(self):
+        return reverse('wallets:detail', kwargs={'pk': self.kwargs['pk']})
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        credit_card = self.get_credit_card()
+        context['credit_card'] = credit_card
+        context['page_title'] = f'Pay {credit_card.name}'
+        context['currency_symbol'] = self.request.user.profile.currency_symbol
+        return context
+
+
+class CreditCardPaymentHistoryView(LoginRequiredMixin, ListView):
+    """View all payment history for a credit card"""
+    model = CreditCardPayment
+    template_name = 'wallets/cc_payment_history.html'
+    context_object_name = 'payments'
+    
+    def get_credit_card(self):
+        return get_object_or_404(
+            Account, 
+            pk=self.kwargs['pk'], 
+            user=self.request.user,
+            account_type='credit'
+        )
+    
+    def get_queryset(self):
+        return CreditCardPayment.objects.filter(credit_card=self.get_credit_card())
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['credit_card'] = self.get_credit_card()
+        context['page_title'] = 'Payment History'
+        context['currency_symbol'] = self.request.user.profile.currency_symbol
+        return context

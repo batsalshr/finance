@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Payment History - {{ credit_card.name }} - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="history-page">
+    <!-- Header -->
+    <div class="page-header">
+        <a href="{% url 'wallets:detail' credit_card.pk %}" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1>Payment History</h1>
+            <p>{{ credit_card.name }}</p>
+        </div>
+        <a href="{% url 'wallets:cc_payment' credit_card.pk %}" class="btn-new-payment">
+            <i class="bi bi-plus-lg"></i>
+            New Payment
+        </a>
+    </div>
+
+    <!-- Payment List -->
+    <div class="payments-card">
+        {% if payments %}
+        <div class="payments-list">
+            {% for payment in payments %}
+            <div class="payment-item">
+                <div class="payment-icon {% if payment.payment_type == 'full' %}full{% elif payment.payment_type == 'minimum' %}minimum{% else %}partial{% endif %}">
+                    <i class="bi bi-{% if payment.payment_type == 'full' %}check-circle{% elif payment.payment_type == 'minimum' %}dash-circle{% else %}circle-half{% endif %}"></i>
+                </div>
+                <div class="payment-info">
+                    <span class="payment-type">{{ payment.get_payment_type_display }}</span>
+                    <span class="payment-meta">
+                        {{ payment.payment_date|date:"d M Y" }} · From {{ payment.source_account.name }}
+                    </span>
+                    {% if payment.notes %}
+                    <span class="payment-notes">{{ payment.notes }}</span>
+                    {% endif %}
+                </div>
+                <div class="payment-amount">
+                    <span class="amount">{{ currency_symbol }}{{ payment.amount|floatformat:0|intcomma }}</span>
+                    <span class="balance-after">
+                        Balance: {{ currency_symbol }}{{ payment.balance_before_payment|add:payment.amount|floatformat:0|intcomma }} → {{ currency_symbol }}{{ payment.balance_before_payment|floatformat:0|intcomma }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="bi bi-credit-card-2-front"></i>
+            </div>
+            <h3>No payments yet</h3>
+            <p>Make your first payment to see history here</p>
+            <a href="{% url 'wallets:cc_payment' credit_card.pk %}" class="btn-primary">
+                <i class="bi bi-plus-lg"></i>
+                Make Payment
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.history-page {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.back-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3f4f6;
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 18px;
+}
+
+.back-btn:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.page-header > div {
+    flex: 1;
+}
+
+.page-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.page-header p {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 2px 0 0 0;
+}
+
+.btn-new-payment {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #059669;
+    color: white;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.btn-new-payment:hover {
+    background: #047857;
+    color: white;
+}
+
+/* Payments Card */
+.payments-card {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+}
+
+.payments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.payment-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px;
+    background: #f9fafb;
+    border-radius: 14px;
+}
+
+.payment-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.payment-icon.full {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.payment-icon.minimum {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.payment-icon.partial {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.payment-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.payment-type {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.payment-meta {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.payment-notes {
+    font-size: 12px;
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.payment-amount {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.payment-amount .amount {
+    font-size: 18px;
+    font-weight: 700;
+    color: #059669;
+}
+
+.payment-amount .balance-after {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    background: #f3f4f6;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.empty-icon i {
+    font-size: 32px;
+    color: #9ca3af;
+}
+
+.empty-state h3 {
+    font-size: 18px;
+    color: #111827;
+    margin: 0 0 8px 0;
+}
+
+.empty-state p {
+    color: #6b7280;
+    margin: 0 0 24px 0;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: #111827;
+    color: white;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.btn-primary:hover {
+    background: #1f2937;
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .payment-item {
+        flex-wrap: wrap;
+    }
+    
+    .payment-amount {
+        width: 100%;
+        text-align: left;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 12px;
+        margin-top: 8px;
+        border-top: 1px solid #e5e7eb;
+    }
+}
+</style>
+{% endblock %}

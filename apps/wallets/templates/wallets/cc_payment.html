@@ -1,0 +1,497 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Pay {{ credit_card.name }} - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="payment-page">
+    <!-- Header -->
+    <div class="page-header">
+        <a href="{% url 'wallets:detail' credit_card.pk %}" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1>Make Payment</h1>
+            <p>{{ credit_card.name }}</p>
+        </div>
+    </div>
+
+    <div class="payment-grid">
+        <!-- Credit Card Summary -->
+        <div class="cc-summary-card">
+            <div class="cc-header">
+                <div class="cc-icon" style="background: {{ credit_card.color }}20; color: {{ credit_card.color }}">
+                    <i class="{{ credit_card.icon }}"></i>
+                </div>
+                <div class="cc-info">
+                    <span class="cc-name">{{ credit_card.name }}</span>
+                    <span class="cc-limit">Limit: {{ currency_symbol }}{{ credit_card.credit_limit|floatformat:0|intcomma }}</span>
+                </div>
+            </div>
+            
+            <div class="cc-balance">
+                <span class="balance-label">Current Balance</span>
+                <span class="balance-value">{{ currency_symbol }}{{ credit_card.amount_owed|floatformat:2|intcomma }}</span>
+            </div>
+            
+            <div class="cc-stats">
+                <div class="cc-stat">
+                    <span class="stat-label">Available Credit</span>
+                    <span class="stat-value">{{ currency_symbol }}{{ credit_card.available_credit|floatformat:0|intcomma }}</span>
+                </div>
+                <div class="cc-stat">
+                    <span class="stat-label">Utilization</span>
+                    <span class="stat-value">{{ credit_card.credit_utilization|floatformat:0 }}%</span>
+                </div>
+            </div>
+            
+            {% if credit_card.billing_due_date %}
+            <div class="cc-due {% if credit_card.is_overdue %}overdue{% elif credit_card.due_status == 'due_soon' %}due-soon{% endif %}">
+                <i class="bi bi-calendar-event"></i>
+                <span>
+                    {% if credit_card.is_overdue %}
+                        Overdue by {{ credit_card.days_overdue }} day{{ credit_card.days_overdue|pluralize }}
+                    {% elif credit_card.days_until_due == 0 %}
+                        Due today!
+                    {% else %}
+                        Due in {{ credit_card.days_until_due }} days ({{ credit_card.billing_due_date|date:"d M" }})
+                    {% endif %}
+                </span>
+            </div>
+            {% endif %}
+            
+            <!-- Quick Payment Buttons -->
+            <div class="quick-amounts">
+                <span class="quick-label">Quick select:</span>
+                <div class="quick-btns">
+                    {% if credit_card.minimum_payment > 0 %}
+                    <button type="button" class="quick-btn" data-amount="{{ credit_card.minimum_payment }}" data-type="minimum">
+                        Min ({{ currency_symbol }}{{ credit_card.minimum_payment|floatformat:0|intcomma }})
+                    </button>
+                    {% endif %}
+                    <button type="button" class="quick-btn" data-amount="{{ credit_card.amount_owed }}" data-type="full">
+                        Full ({{ currency_symbol }}{{ credit_card.amount_owed|floatformat:0|intcomma }})
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Form -->
+        <div class="payment-form-card">
+            <h2>Payment Details</h2>
+            
+            <form method="post" class="payment-form">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="id_source_account">Pay From</label>
+                    {{ form.source_account }}
+                    {% if form.source_account.errors %}
+                    <div class="error-text">{{ form.source_account.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_amount">Amount</label>
+                    <div class="amount-input-wrapper">
+                        <span class="currency-prefix">{{ currency_symbol }}</span>
+                        {{ form.amount }}
+                    </div>
+                    {% if form.amount.errors %}
+                    <div class="error-text">{{ form.amount.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_payment_type">Payment Type</label>
+                        {{ form.payment_type }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_payment_date">Payment Date</label>
+                        {{ form.payment_date }}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_next_due_date">Next Due Date <span class="optional">(optional)</span></label>
+                    {{ form.next_due_date }}
+                    <small class="form-hint">Update the credit card's next billing due date</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_notes">Notes <span class="optional">(optional)</span></label>
+                    {{ form.notes }}
+                </div>
+                
+                <div class="form-actions">
+                    <a href="{% url 'wallets:detail' credit_card.pk %}" class="btn-cancel">Cancel</a>
+                    <button type="submit" class="btn-pay">
+                        <i class="bi bi-check-lg"></i>
+                        Make Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.payment-page {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.back-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3f4f6;
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 18px;
+}
+
+.back-btn:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.page-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.page-header p {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 2px 0 0 0;
+}
+
+/* Grid Layout */
+.payment-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+/* CC Summary Card */
+.cc-summary-card {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 20px;
+    padding: 28px;
+    color: white;
+}
+
+.cc-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.cc-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.cc-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.cc-name {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.cc-limit {
+    font-size: 13px;
+    opacity: 0.7;
+}
+
+.cc-balance {
+    text-align: center;
+    padding: 24px 0;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.balance-label {
+    display: block;
+    font-size: 13px;
+    opacity: 0.6;
+    margin-bottom: 4px;
+}
+
+.balance-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: #f87171;
+}
+
+.cc-stats {
+    display: flex;
+    gap: 20px;
+    padding: 20px 0;
+}
+
+.cc-stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.cc-stat .stat-label {
+    font-size: 12px;
+    opacity: 0.6;
+}
+
+.cc-stat .stat-value {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.cc-due {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.cc-due.overdue {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+}
+
+.cc-due.due-soon {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fcd34d;
+}
+
+.quick-amounts {
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.quick-label {
+    display: block;
+    font-size: 12px;
+    opacity: 0.6;
+    margin-bottom: 10px;
+}
+
+.quick-btns {
+    display: flex;
+    gap: 10px;
+}
+
+.quick-btn {
+    flex: 1;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.quick-btn:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+/* Payment Form Card */
+.payment-form-card {
+    background: white;
+    border-radius: 20px;
+    padding: 28px;
+}
+
+.payment-form-card h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 24px 0;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.form-group label .optional {
+    font-weight: 400;
+    color: #9ca3af;
+}
+
+.form-control, .form-select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-control:focus, .form-select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.amount-input-wrapper {
+    position: relative;
+}
+
+.currency-prefix {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.amount-input-wrapper .form-control {
+    padding-left: 40px;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.error-text {
+    color: #dc2626;
+    font-size: 13px;
+    margin-top: 6px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.btn-cancel {
+    flex: 1;
+    padding: 14px 20px;
+    background: #f3f4f6;
+    color: #6b7280;
+    border-radius: 12px;
+    text-decoration: none;
+    text-align: center;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.btn-cancel:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.btn-pay {
+    flex: 2;
+    padding: 14px 20px;
+    background: #059669;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+
+.btn-pay:hover {
+    background: #047857;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .payment-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .balance-value {
+        font-size: 28px;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quickBtns = document.querySelectorAll('.quick-btn');
+    const amountInput = document.getElementById('id_amount');
+    const paymentTypeSelect = document.getElementById('id_payment_type');
+    
+    quickBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const amount = this.dataset.amount;
+            const type = this.dataset.type;
+            
+            amountInput.value = parseFloat(amount).toFixed(2);
+            
+            // Set payment type
+            if (type === 'full') {
+                paymentTypeSelect.value = 'full';
+            } else if (type === 'minimum') {
+                paymentTypeSelect.value = 'minimum';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
