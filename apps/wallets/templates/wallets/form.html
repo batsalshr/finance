@@ -17,6 +17,24 @@
     <div class="form-card">
         <form method="post">
             {% csrf_token %}
+
+            <!-- Global error display -->
+            {% if form.errors %}
+            <div class="form-errors-banner">
+                <i class="bi bi-exclamation-circle-fill me-2"></i>
+                <div>
+                    <strong>Please fix the following errors:</strong>
+                    {% for field in form %}
+                        {% if field.errors %}
+                            <p class="mb-0">{{ field.label }}: {{ field.errors.0 }}</p>
+                        {% endif %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <p class="mb-0">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
             
             <div class="form-section">
                 <h6 class="form-section-title">Basic Information</h6>
@@ -33,12 +51,18 @@
                     <div class="form-group">
                         <label for="id_account_type">Account Type</label>
                         {{ form.account_type }}
+                        {% if form.account_type.errors %}
+                        <span class="form-error">{{ form.account_type.errors.0 }}</span>
+                        {% endif %}
                     </div>
                     <div class="form-group">
                         <label for="id_initial_balance">
                             <span id="balanceLabel">Initial Balance</span>
                         </label>
                         {{ form.initial_balance }}
+                        {% if form.initial_balance.errors %}
+                        <span class="form-error">{{ form.initial_balance.errors.0 }}</span>
+                        {% endif %}
                         <span class="form-hint" id="balanceHint">Starting balance of this account</span>
                     </div>
                 </div>
@@ -46,6 +70,9 @@
                 <div class="form-group">
                     <label for="id_description">Description <span class="optional">(Optional)</span></label>
                     {{ form.description }}
+                    {% if form.description.errors %}
+                    <span class="form-error">{{ form.description.errors.0 }}</span>
+                    {% endif %}
                 </div>
             </div>
             
@@ -59,7 +86,29 @@
                 <div class="form-group">
                     <label for="id_credit_limit">Credit Limit</label>
                     {{ form.credit_limit }}
+                    {% if form.credit_limit.errors %}
+                    <span class="form-error">{{ form.credit_limit.errors.0 }}</span>
+                    {% endif %}
                     <span class="form-hint">Maximum amount you can borrow on this card</span>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_billing_due_date">Next Due Date <span class="optional">(Optional)</span></label>
+                        {{ form.billing_due_date }}
+                        {% if form.billing_due_date.errors %}
+                        <span class="form-error">{{ form.billing_due_date.errors.0 }}</span>
+                        {% endif %}
+                        <span class="form-hint">Next payment due date</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_minimum_payment">Minimum Payment <span class="optional">(Optional)</span></label>
+                        {{ form.minimum_payment }}
+                        {% if form.minimum_payment.errors %}
+                        <span class="form-error">{{ form.minimum_payment.errors.0 }}</span>
+                        {% endif %}
+                        <span class="form-hint">Minimum amount due</span>
+                    </div>
                 </div>
             </div>
             
@@ -71,6 +120,9 @@
                 <div class="form-group">
                     <label for="id_savings_amount">Savings Amount</label>
                     {{ form.savings_amount }}
+                    {% if form.savings_amount.errors %}
+                    <span class="form-error">{{ form.savings_amount.errors.0 }}</span>
+                    {% endif %}
                     <span class="form-hint">This amount will be excluded from your spendable balance</span>
                 </div>
             </div>
@@ -82,10 +134,16 @@
                     <div class="form-group">
                         <label for="id_icon">Icon</label>
                         {{ form.icon }}
+                        {% if form.icon.errors %}
+                        <span class="form-error">{{ form.icon.errors.0 }}</span>
+                        {% endif %}
                     </div>
                     <div class="form-group">
                         <label for="id_color">Color</label>
                         {{ form.color }}
+                        {% if form.color.errors %}
+                        <span class="form-error">{{ form.color.errors.0 }}</span>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -176,6 +234,25 @@
     border: 1px solid #f3f4f6;
 }
 
+/* Error Banner */
+.form-errors-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    font-size: 14px;
+}
+
+.form-errors-banner i {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
 /* Form Sections */
 .form-section {
     margin-bottom: 28px;
@@ -241,6 +318,13 @@
     outline: none;
     border-color: #111827;
     box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1);
+}
+
+/* Highlight fields with errors */
+.form-group input.is-invalid,
+.form-group select.is-invalid,
+.form-group textarea.is-invalid {
+    border-color: #dc2626;
 }
 
 .form-row {
@@ -353,18 +437,12 @@ document.addEventListener('DOMContentLoaded', function() {
             includeHint.textContent = 'Count this account toward your total balance';
         }
     }
-    
-    // Initial check
+
+    // If the form was submitted with errors, keep the correct sections visible
     updateFormForAccountType();
     
     // Listen for changes
     accountType.addEventListener('change', updateFormForAccountType);
-});
-
-// Initialize tooltips
-var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl)
 });
 </script>
 {% endblock %}
